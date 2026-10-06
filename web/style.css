@@ -234,3 +234,6 @@ section#hole{padding-top:8vh}
 html.gaming,html.gaming body{overflow:hidden}
 #cardModal{z-index:70}
 .g-ctl{left:0;right:0;margin:0 auto;width:min(520px,calc(100% - 32px))}
+.g-hint{font-size:17px;font-weight:600}
+.g-ctl .btn.cue{border-color:var(--ice);animation:cue 1.1s ease-in-out infinite}
+@keyframes cue{50%{border-color:transparent}}

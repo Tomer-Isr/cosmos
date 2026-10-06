@@ -52,10 +52,19 @@
     return s;
   }
   // coast-only forecast for the dotted line
+  // only the next dive counts: the line stops after it climbs back out, and "got" means this pass hits the probe
   function predict(s, n, h) {
     const q = { ...s, over: null, fuel: 0 }, pts = [];
-    for (let i = 0; i < n; i++) { step(q, h); pts.push(q.x, q.y); if (q.over) break; }
-    pts.over = q.over; pts.got = q.got;
+    let near = false, passed = false, got = s.got;
+    for (let i = 0; i < n; i++) {
+      step(q, h); pts.push(q.x, q.y); if (q.over) break;
+      const r = Math.hypot(q.x, q.y);
+      if (!passed && q.got) got = true;
+      if (r < P.RP + 1.2) near = true;
+      if (near && !passed && r > P.RP + 1.8) passed = true;
+      if (passed && !s.got && r > 6.5) break;
+    }
+    pts.over = q.over; pts.got = got;
     return pts;
   }
   root.HoleGame = { P, dil, make, step, predict, GM };

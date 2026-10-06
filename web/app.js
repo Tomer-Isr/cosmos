@@ -339,7 +339,7 @@ function birthdaysIn(years) {
 // top-down view of the disc plane; physics in game-core.js (rs = 1, 1 sim unit = 1 minute of ship time)
 const HG = window.HoleGame, MIN_YEAR = 525949;
 const gameEl = $('game'), gc = $('gameC'), gx = gc.getContext('2d');
-let gs = null, gRun = false, gThr = 0, gView = 11.5, gTrail = [], gW = 0, gH = 0, gDPR = 1, gStars = [], gDisk = null, gLast = 0, gMother = 0, gRes = null;
+let gArmed = false, gs = null, gRun = false, gThr = 0, gView = 11.5, gTrail = [], gW = 0, gH = 0, gDPR = 1, gStars = [], gDisk = null, gLast = 0, gMother = 0, gRes = null;
 const shipHM = min => t('hm', { h: fmt(Math.floor(min / 60)), m: fmt(Math.floor(min % 60)) });
 const earthFmt = min => isFinite(min) ? spanFmt(min / 60) : '∞';
 function gSize() {
@@ -369,7 +369,7 @@ function gOpen() {
 }
 function gReset() { gs = HG.make(-Math.PI / 2, Math.PI * .72); gTrail = []; gMother = 0; gThr = 0; gRes = null; gView = 11.5; }
 function gClose() { gameEl.hidden = true; root.classList.remove('gaming'); gRun = false; gThr = 0; }
-function gStart() { gReset(); $('gIntro').hidden = true; $('gEnd').hidden = true; gRun = true; }
+function gStart() { gReset(); $('gIntro').hidden = true; $('gEnd').hidden = true; gRun = true; gArmed = false; }
 function gFinish() {
   gRun = false; gThr = 0; setThr(0);
   const o = gs.over, ageNow = (Date.now() - birth) / YEAR;
@@ -386,7 +386,7 @@ function gFinish() {
 function gLoop(now) {
   if (gameEl.hidden) return;
   const dt = Math.min(.05, Math.max(0, (now - gLast) / 1000)); gLast = now;
-  if (gRun && !gs.over) {
+  if (gRun && gArmed && !gs.over) {
     const r = Math.hypot(gs.x, gs.y), v = Math.hypot(gs.vx, gs.vy);
     let sp = 1.5 + 8.5 * sstep(2.6, 7, r); if (gThr) sp = Math.min(sp, 1.5);
     const thr = gs.fuel > 0 ? gThr : 0;
@@ -424,6 +424,9 @@ function gDraw(tm) {
     x.setLineDash([2, 5]); x.strokeStyle = 'rgba(143,208,255,.55)'; x.lineWidth = 1; x.beginPath(); x.arc(ppx, ppy, HG.P.PICK * sc, 0, 7); x.stroke(); x.setLineDash([]);
     x.fillStyle = `rgba(143,208,255,${.7 + .3 * Math.sin(tm * 5)})`; x.beginPath(); x.arc(ppx, ppy, 4, 0, 7); x.fill();
   }
+  x.font = '500 12px "JetBrains Mono",monospace'; x.textAlign = 'center'; x.direction = 'ltr';
+  x.fillStyle = 'rgba(143,208,255,.85)'; x.fillText(t('gLblBase'), mx, my - 13);
+  if (!gs.got) x.fillText(t('gLblProbe'), ppx, ppy - HG.P.PICK * sc - 6);
   // trail
   if (gTrail.length > 3) { x.strokeStyle = 'rgba(226,223,247,.22)'; x.lineWidth = 1; x.beginPath(); for (let i = 0; i < gTrail.length; i += 2) { const [a, b] = P(gTrail[i], gTrail[i + 1]); i ? x.lineTo(a, b) : x.moveTo(a, b); } x.stroke(); }
   // forecast
@@ -440,15 +443,21 @@ function gDraw(tm) {
     if (gRun && gThr && gs.fuel > 0) { x.fillStyle = 'rgba(255,180,84,.9)'; x.beginPath(); const f = 8 + Math.random() * 5; if (gThr > 0) { x.moveTo(-6, -3); x.lineTo(-6 - f, 0); x.lineTo(-6, 3); } else { x.moveTo(6, -3); x.lineTo(6 + f, 0); x.lineTo(6, 3); } x.fill(); }
     x.fillStyle = '#e2dff7'; x.beginPath(); x.moveTo(8, 0); x.lineTo(-6, -5); x.lineTo(-3, 0); x.lineTo(-6, 5); x.closePath(); x.fill();
     x.restore();
+    x.fillStyle = '#e2dff7'; x.fillText(t('gLblYou'), sx, sy + 22);
   }
   // HUD
   const ageNow = (Date.now() - birth) / YEAR, age = Math.floor(ageNow + gs.earth / MIN_YEAR);
   $('gShip').textContent = shipHM(gs.ship); $('gEarth').textContent = earthFmt(gs.earth); $('gAge').textContent = isFinite(age) ? fmt(age) : '∞';
   $('gFuel').style.width = (gs.fuel / HG.P.FUEL * 100).toFixed(1) + '%';
   $('gHere').textContent = t('gHere', { s: r > 1.02 ? spanFmt(HG.dil(r)) : '∞' });
-  $('gHint').textContent = !gRun ? '' : gs.got ? t('gHintGot') : pred && pred.over === 'lost' ? t('gHintPlunge') : gs.minR < HG.P.RP + .9 && r > HG.P.RP + 1.2 ? t('gHintMiss') : t('gHint0');
+  // step-by-step guide: what to do right now, and which button to press
+  const red = pred && pred.over === 'lost', green = pred && pred.got && !gs.got;
+  const k = !gRun ? '' : red ? 'gH5' : !gArmed ? 'gH1' : gs.got ? 'gH6' : green ? (gThr ? 'gH3' : 'gH4') : gThr < 0 ? 'gH2' : gs.minR < HG.P.RP + .9 && r > HG.P.RP + 1.2 ? 'gH7' : gThr ? 'gH2' : 'gH1';
+  $('gHint').textContent = k ? t(k) : '';
+  $('gBrake').classList.toggle('cue', gRun && (k === 'gH1' || k === 'gH2' || k === 'gH7'));
+  $('gGas').classList.toggle('cue', gRun && k === 'gH5');
 }
-function setThr(v) { gThr = v; $('gBrake').classList.toggle('on', v < 0); $('gGas').classList.toggle('on', v > 0); }
+function setThr(v) { if (v && gRun) gArmed = true; gThr = v; $('gBrake').classList.toggle('on', v < 0); $('gGas').classList.toggle('on', v > 0); }
 [['gBrake', -1], ['gGas', 1]].forEach(([id, v]) => {
   const b = $(id);
   b.addEventListener('pointerdown', e => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (er) {} setThr(v); });
