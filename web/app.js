@@ -268,7 +268,7 @@ function tick() {
   const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
   set('orbitMoon', fmt(Math.floor(orbit / 384400)));
   set('orbitSun', fmt(Math.floor(orbit / 149.6e6)));
-  set('laps', fmt(years, 7));
+  set('laps', fmt(years, 5));
   set('galKm', big(s * 230) + ' ' + t('km'));
   set('galPct', fmt(years / 230e6 * 100, 7) + '%');
   set('cmbKm', big(s * 370) + ' ' + t('km'));
@@ -933,7 +933,7 @@ function initScene() {
     trailGeo.attributes.position.needsUpdate = trailGeo.attributes.color.needsUpdate = true;
     trailGeo.computeBoundingSphere();
 
-    putLabel(earthLabel, ep, st.w(0) * (mob ? .9 : 1), 18, -18);
+    putLabel(earthLabel, ep, st.w(0) * (mob ? 0 : 1), 18, -18);
     putLabel(sunLabel, ORIGIN, Math.max(st.w(2), st.w(3)), -16, -8, true);
     putLabel(coreLabel, Gc, st.w(2) * .85, 18, 0);
     const focP = focus && focus.kind === 'planet' ? focus.p : null, focS = focus && focus.kind === 'star' ? focus.ns : null;
