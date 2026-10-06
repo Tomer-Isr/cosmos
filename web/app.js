@@ -185,7 +185,7 @@ function renderStatic() {
     row.firstChild.replaceWith(c);
     list.appendChild(row);
   });
-  renderChips();
+  renderChips(); renderSeen();
 
   $('sleep').textContent = fmt(years / 3, 1) + ' ' + yrs(years / 3);
   const hairM = years * 0.15;
@@ -200,6 +200,28 @@ function renderStatic() {
   $('bornShare').textContent = '≈' + fmt(younger) + '%';
   $('olderThan').textContent = '≈' + fmt(younger) + '%';
   updatePlanetLabels();
+}
+function renderSeen() {
+  const now = Date.now(), age = (now - birth) / YEAR;
+  const list = STARS.slice(1).map(s => ({ s, at: new Date(birth.getTime() + s[1] * YEAR) })).sort((a, b) => a.s[1] - b.s[1]);
+  const seen = list.filter(x => x.at <= now), next = list.find(x => x.at > now);
+  $('seenN').textContent = seen.length;
+  if (next) {
+    const dd = Math.ceil((next.at - now) / DAY);
+    $('nextStar').textContent = cap(starName(next.s));
+    $('nextStarN').textContent = t('nextIn', { n: fmt(dd), days: dys(dd), date: next.at.toLocaleDateString(D._locale, { day: 'numeric', month: 'long', year: 'numeric' }) });
+  } else { $('nextStar').textContent = '—'; $('nextStarN').textContent = ''; }
+  if (!seen.length) $('nextStarN').textContent += ' · ' + t('seenNone');
+  $('seenInside').textContent = '≈' + fmt(Math.max(0, Math.round(4 / 3 * Math.PI * age ** 3 * .004)));
+  const box = $('seenChips'); box.innerHTML = '';
+  list.forEach(({ s, at }) => {
+    const b = document.createElement('button'); b.type = 'button'; const ok = at <= now, c = s[3].join(',');
+    b.className = 'chip' + (ok ? ' mine' : ''); if (!ok) b.style.opacity = .55;
+    const left = Math.ceil((at - now) / YEAR);
+    b.innerHTML = `<i style="background:rgb(${c});box-shadow:${ok ? `0 0 8px rgb(${c})` : 'none'}"></i>${cap(starName(s))} <small>${ok ? t('seenSince', { y: at.getFullYear() }) : t('seenIn', { n: left, years: yrs(left) })}</small>`;
+    b.onclick = () => fly('star', s[0]);
+    box.appendChild(b);
+  });
 }
 function renderChips() {
   const ny = yearFrac(new Date()), chips = $('starChips'); chips.innerHTML = '';
@@ -280,6 +302,7 @@ function tick() {
   let nb = new Date(n.getFullYear(), b.getMonth(), b.getDate());
   if (nb <= n) nb = new Date(n.getFullYear() + 1, b.getMonth(), b.getDate());
   const left = nb - now, d = Math.floor(left / DAY), h = Math.floor(left % DAY / 36e5), m = Math.floor(left % 36e5 / 6e4), sec = Math.floor(left % 6e4 / 1e3);
+  set('seenR', fmt(s * 1000 / YEAR, 6));
   set('nextBd', `${d} ${t('dShort')} ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`);
   const turning = nb.getFullYear() - b.getFullYear();
   set('nextBdNote', t('nextBdNote', { n: turning, years: yrs(turning) }));
@@ -814,6 +837,16 @@ function initScene() {
     vertexShader: `attribute float t;varying float vT;void main(){vT=t;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
     fragmentShader: `uniform float uTime,uOp;uniform vec3 uCol;varying float vT;void main(){float p=fract(vT*5.-uTime*.35);float pulse=pow(p,14.);gl_FragColor=vec4(mix(uCol,vec3(.56,.82,1.),vT)*(.25+pulse*2.5),uOp*(.35+pulse));}` });
   const beam = new THREE.Line(beamGeo, beamMat); beam.frustumCulled = false; scene.add(beam);
+  // the sphere of light that left Earth the day you were born; radius = your age in light years (same compressed scale as the stars)
+  const lightSphere = new THREE.Mesh(new THREE.SphereGeometry(1, 72, 48), new THREE.ShaderMaterial({
+    uniforms: { uOp: { value: 0 }, uT: { value: 0 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `varying vec3 vN;varying vec3 vV;varying vec3 vP;void main(){vP=position;vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`,
+    fragmentShader: `uniform float uOp,uT;varying vec3 vN;varying vec3 vV;varying vec3 vP;void main(){float f=pow(1.-abs(dot(vN,vV)),2.2);
+      float lat=pow(.5+.5*sin(vP.y*34.-uT*1.2),24.);float lon=pow(.5+.5*sin(atan(vP.z,vP.x)*18.),40.);
+      vec3 c=vec3(.56,.82,1.);gl_FragColor=vec4(c*(f*.85+(lat+lon)*.18*(.3+f)),uOp*(f*.75+.04));}`,
+  }));
+  scene.add(lightSphere);
+  const sphereR = () => 70 + (Date.now() - birth) / YEAR * 11;
 
   let focus = null, fw = 0;
   function flyTo(kind, key) {
@@ -865,6 +898,7 @@ function initScene() {
       { T: ORIGIN, O: comb([V(.25, 0, 1), mob ? 95 : 46], [UP, mob ? 60 : 27]), sx: mob ? 0 : .18, sy: 0, dim: .1, orb: 1 },
       { T: Gc.clone().lerp(ORIGIN, .4), O: V(600, 5600, 5200), sx: mob ? 0 : .2, sy: mob ? -.1 : 0, dim: .15, orb: 0 },
       { T: ORIGIN, O: V(950, 120, 330), sx: 0, sy: 0, dim: .35, orb: 0 },
+      { T: ORIGIN, O: V(.55, .42, .72).normalize().multiplyScalar(sphereR() * (mob ? 3.4 : 2.5)), sx: mob ? 0 : .22, sy: mob ? -.1 : 0, dim: mob ? .4 : .12, orb: 0 },
       { T: ORIGIN, O: comb([UP, mob ? 150 : 72], [V(0, 0, 1), mob ? 20 : 14]), sx: mob ? 0 : .22, sy: mob ? -.06 : 0, dim: mob ? .45 : .12, orb: 1 },
       { T: e, O: comb([r, -1.0], [tg, .55], [UP, .32]), sx: mob ? 0 : .24, sy: mob ? -.2 : 0, dim: mob ? .4 : .08, orb: .15 },
       { T: e, O: comb([r, .95], [tg, .45], [UP, .4]), sx: mob ? 0 : .24, sy: mob ? -.2 : 0, dim: mob ? .4 : .05, orb: .1 },
@@ -937,10 +971,13 @@ function initScene() {
     putLabel(sunLabel, ORIGIN, Math.max(st.w(2), st.w(3)), -16, -8, true);
     putLabel(coreLabel, Gc, st.w(2) * .85, 18, 0);
     const focP = focus && focus.kind === 'planet' ? focus.p : null, focS = focus && focus.kind === 'star' ? focus.ns : null;
-    for (const p of planets) putLabel(planetLabels[p.id], p.grp.position, Math.max(st.w(4) + st.w(8) + st.w(1) * .55, p === focP ? fw : 0), 14 + p.size * 10, -4);
+    for (const p of planets) putLabel(planetLabels[p.id], p.grp.position, Math.max(st.w(5) + st.w(9) + st.w(1) * .55, p === focP ? fw : 0), 14 + p.size * 10, -4);
+    const ageY = (Date.now() - birth) / YEAR, w4 = st.w(4);
+    lightSphere.scale.setScalar(sphereR()); lightSphere.material.uniforms.uOp.value = w4; lightSphere.material.uniforms.uT.value = tm;
     for (const n of namedStars) {
-      n.sp.scale.setScalar(n === focS ? 7 + n.sp.position.length() * .03 * fw : 7);
-      putLabel(n.lb, n.sp.position, Math.max(n === focS ? fw : 0, n.s === curStar ? st.w(3) : st.w(3) * .45), 12, -4);
+      const inside = n.s[1] <= ageY;
+      n.sp.scale.setScalar(n === focS ? 7 + n.sp.position.length() * .03 * fw : 7 + (inside ? 7 : -3) * w4);
+      putLabel(n.lb, n.sp.position, Math.max(n === focS ? fw : 0, n.s === curStar ? st.w(3) : st.w(3) * .45, inside ? w4 : 0), 12, -4);
     }
     if (focS) {
       const a = focS.sp.position, b = earth.grp.position, arr = beamGeo.attributes.position.array;

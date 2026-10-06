@@ -124,9 +124,25 @@
     </div>
   </section>
 
-  <section class="ch tall" id="planets">
+  <section class="ch tall" id="seen">
     <div class="wrap">
       <div class="panel rv" data-scene="4">
+        <h2 data-i18n="seenH"></h2>
+        <p data-i18n="seenP"></p>
+        <div class="grid">
+          <div class="cell"><div class="k" data-i18n="kSeen"></div><div class="v" id="seenN">—</div><div class="n" data-i18n="nSeen"></div></div>
+          <div class="cell"><div class="k" data-i18n="kNext"></div><div class="v" id="nextStar">—</div><div class="n" id="nextStarN">—</div></div>
+          <div class="cell"><div class="k" data-i18n="kRadius"></div><div class="v live" id="seenR">—</div><div class="n" data-i18n="nRadius"></div></div>
+          <div class="cell"><div class="k" data-i18n="kInside"></div><div class="v" id="seenInside">—</div><div class="n" data-i18n="nInside"></div></div>
+        </div>
+        <div class="chips" id="seenChips" style="margin-top:16px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch tall" id="planets">
+    <div class="wrap">
+      <div class="panel rv" data-scene="5">
         <h2 data-i18n="plH"></h2>
         <p data-i18n="plP"></p>
         <div class="planets" id="plList"></div>
@@ -136,7 +152,7 @@
 
   <section class="ch" id="body">
     <div class="wrap">
-      <div class="panel rv" data-scene="5">
+      <div class="panel rv" data-scene="6">
         <h2 data-i18n="bodyH"></h2>
         <p data-i18n="bodyP"></p>
         <div class="strip"><canvas id="ecg" aria-hidden="true"></canvas><div class="tagline" data-i18n="pulse"></div></div>
@@ -154,7 +170,7 @@
 
   <section class="ch" id="people">
     <div class="wrap">
-      <div class="panel rv" data-scene="6">
+      <div class="panel rv" data-scene="7">
         <h2 data-i18n="peoH"></h2>
         <p data-i18n="peoP"></p>
         <div class="strip"><canvas id="births" aria-hidden="true"></canvas><div class="tagline" data-i18n="birthsTag"></div></div>
@@ -170,7 +186,7 @@
 
   <section class="ch" id="weeks-ch">
     <div class="wrap">
-      <div class="panel wide rv" data-scene="7">
+      <div class="panel wide rv" data-scene="8">
         <h2 data-i18n="wH"></h2>
         <p data-i18n="wP"></p>
         <canvas id="weeks"></canvas>
@@ -185,7 +201,7 @@
 
   <section class="ch tall" id="compare">
     <div class="wrap">
-      <div class="panel rv" data-scene="8">
+      <div class="panel rv" data-scene="9">
         <h2 data-i18n="cmpH"></h2>
         <p data-i18n="cmpP"></p>
         <form class="cmp-form" id="cmpForm" autocomplete="off">
