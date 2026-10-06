@@ -208,3 +208,29 @@ main,header .wrap,.foot,.hud,.scale{transition:opacity .6s}
 .hole-note{margin:14px 0 0;font-size:12.5px;color:var(--dim)}
 section#hole{padding-top:8vh}
 .hole-view{height:85vh}
+
+.hole-play{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:22px}
+.hole-play span{font-size:13px;color:var(--dim)}
+.game{position:fixed;inset:0;z-index:60;background:#030309;color:var(--text,#e2dff7);touch-action:none;user-select:none;-webkit-user-select:none}
+.game canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.g-top{position:absolute;top:0;left:0;right:0;display:flex;gap:6px 18px;align-items:flex-start;padding:14px 16px 0;flex-wrap:wrap}
+.g-stat{display:grid;gap:2px;min-width:0}
+.g-stat span{font-size:11px;color:var(--dim);font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.06em}
+.g-stat b{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.g-x{margin-inline-start:auto;background:none;border:1px solid var(--line);color:inherit;border-radius:99px;width:40px;height:40px;font-size:22px;line-height:1;cursor:pointer}
+.g-fuel{position:absolute;top:76px;left:16px;right:16px;display:flex;gap:10px;align-items:center;font-size:11px;color:var(--dim);font-family:var(--f-mono);text-transform:uppercase}
+.g-fuel i{flex:0 1 110px;height:6px;border-radius:9px;background:rgba(255,255,255,.1);overflow:hidden;display:block}
+.g-fuel em{display:block;height:100%;background:var(--ice);width:100%}
+.g-fuel #gHere{margin-inline-start:auto;text-transform:none;font-family:inherit;font-size:12.5px}
+.g-hint{position:absolute;left:16px;right:16px;bottom:96px;margin:0;text-align:center;font-size:14.5px;color:var(--text,#e2dff7);text-shadow:0 1px 8px #000}
+.g-ctl{position:absolute;left:16px;right:16px;bottom:max(18px,env(safe-area-inset-bottom));display:flex;gap:12px}
+.g-ctl .btn{flex:1;min-height:58px;font-size:16px;touch-action:none}
+.g-ctl .btn.on{background:var(--ice);color:var(--void);border-color:var(--ice)}
+.g-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(480px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:22px;padding:24px 22px}
+.g-card h2{margin:0 0 10px}
+.g-card p{color:var(--dim);margin:0 0 14px}
+.g-card ul{margin:0 0 20px;padding-inline-start:20px;color:var(--dim);display:grid;gap:6px}
+.g-end-acts{display:flex;flex-wrap:wrap;gap:10px}
+html.gaming,html.gaming body{overflow:hidden}
+#cardModal{z-index:70}
+.g-ctl{left:0;right:0;margin:0 auto;width:min(520px,calc(100% - 32px))}

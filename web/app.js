@@ -309,7 +309,7 @@ let holeS = +holeR.value / 1000;
 const holeX = () => Math.pow(10, Math.log10(9) + (Math.log10(HOLE_XMIN) - Math.log10(9)) * holeS);
 const holeDist = () => 34 - 20 * Math.pow(holeS, .8); // where the camera hangs in the picture (not to scale)
 function spanFmt(h) {
-  if (h < 48) return `${fmt(h, h < 1.1 ? 3 : 1)} ${pl(Math.round(h * 10) / 10, D.hours)}`;
+  if (h < 48) return `${fmt(h, h < 1.1 ? 2 : 1)} ${pl(1.5, D.hours)}`;
   const d = h / 24; if (d < 730) return `${fmt(Math.round(d))} ${dys(Math.round(d))}`;
   const y = d / 365.2425; return `${fmt(y, 1)} ${yrs(y)}`;
 }
@@ -328,6 +328,141 @@ function renderHole() {
   $('holeMiller').hidden = f < 50000;
 }
 holeR.addEventListener('input', () => { holeS = +holeR.value / 1000; renderHole(); });
+function birthdaysIn(years) {
+  const now = new Date(), back = new Date(now.getTime() + years * YEAR); let n = 0;
+  if (!isFinite(years)) return Infinity;
+  for (let y = now.getFullYear(); y <= back.getFullYear(); y++) { const b = new Date(y, birth.getMonth(), birth.getDate()); if (b > now && b <= back) n++; }
+  return n;
+}
+
+/* ================= black hole game ================= */
+// top-down view of the disc plane; physics in game-core.js (rs = 1, 1 sim unit = 1 minute of ship time)
+const HG = window.HoleGame, MIN_YEAR = 525949;
+const gameEl = $('game'), gc = $('gameC'), gx = gc.getContext('2d');
+let gs = null, gRun = false, gThr = 0, gView = 11.5, gTrail = [], gW = 0, gH = 0, gDPR = 1, gStars = [], gDisk = null, gLast = 0, gMother = 0, gRes = null;
+const shipHM = min => t('hm', { h: fmt(Math.floor(min / 60)), m: fmt(Math.floor(min % 60)) });
+const earthFmt = min => isFinite(min) ? spanFmt(min / 60) : '∞';
+function gSize() {
+  gDPR = Math.min(devicePixelRatio || 1, 2); gW = innerWidth; gH = innerHeight;
+  gc.width = Math.round(gW * gDPR); gc.height = Math.round(gH * gDPR);
+  let s = 5; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  gStars = Array.from({ length: Math.round(gW * gH / 2600) }, () => [rnd() * gW, rnd() * gH, .3 + rnd() * 1.2, .2 + rnd() * .6]);
+}
+function diskTex() {
+  const N = 640, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), k = N / 2 / 9.5, C = N / 2;
+  const g = x.createRadialGradient(C, C, 3 * k, C, C, 9.5 * k);
+  g.addColorStop(0, 'rgba(255,214,160,.55)'); g.addColorStop(.25, 'rgba(255,140,60,.28)'); g.addColorStop(1, 'rgba(255,90,30,0)');
+  x.fillStyle = g; x.beginPath(); x.arc(C, C, 9.5 * k, 0, Math.PI * 2); x.moveTo(C + 3 * k, C); x.arc(C, C, 3 * k, 0, Math.PI * 2); x.fill('evenodd');
+  let s = 9; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  x.lineCap = 'round';
+  for (let i = 0; i < 1400; i++) {
+    const r = 3 + Math.pow(rnd(), 1.4) * 6.3, a = rnd() * 6.283, len = .2 + rnd() * .9, q = (r - 3) / 6.3;
+    x.strokeStyle = `rgba(255,${Math.round(225 - q * 120)},${Math.round(170 - q * 130)},${(.35 * (1 - q) + .04) * rnd()})`;
+    x.lineWidth = .6 + rnd() * 2.2; x.beginPath(); x.arc(C, C, r * k, a, a + len); x.stroke();
+  }
+  return c;
+}
+function gOpen() {
+  gameEl.hidden = false; root.classList.add('gaming'); gSize(); if (!gDisk) gDisk = diskTex();
+  gReset(); $('gIntro').hidden = false; $('gEnd').hidden = true; gRun = false;
+  gLast = performance.now(); requestAnimationFrame(gLoop);
+}
+function gReset() { gs = HG.make(-Math.PI / 2, Math.PI * .72); gTrail = []; gMother = 0; gThr = 0; gRes = null; gView = 11.5; }
+function gClose() { gameEl.hidden = true; root.classList.remove('gaming'); gRun = false; gThr = 0; }
+function gStart() { gReset(); $('gIntro').hidden = true; $('gEnd').hidden = true; gRun = true; }
+function gFinish() {
+  gRun = false; gThr = 0; setThr(0);
+  const o = gs.over, ageNow = (Date.now() - birth) / YEAR;
+  if (o === 'home') {
+    const ey = gs.earth / MIN_YEAR, age = Math.floor(ageNow + ey);
+    gRes = { ship: shipHM(gs.ship), earth: earthFmt(gs.earth), age: `${fmt(age)} ${yrs(age)}`, bd: fmt(birthdaysIn(ey)) };
+    $('gEndH').textContent = t('gWinH'); $('gEndP').textContent = t('gWinP', gRes);
+  } else {
+    gRes = null;
+    $('gEndH').textContent = t(o === 'lost' ? 'gLostH' : 'gAwayH'); $('gEndP').textContent = t(o === 'lost' ? 'gLostP' : 'gAwayP');
+  }
+  $('gCard').hidden = !gRes; $('gEnd').hidden = false;
+}
+function gLoop(now) {
+  if (gameEl.hidden) return;
+  const dt = Math.min(.05, Math.max(0, (now - gLast) / 1000)); gLast = now;
+  if (gRun && !gs.over) {
+    const r = Math.hypot(gs.x, gs.y), v = Math.hypot(gs.vx, gs.vy);
+    let sp = 1.5 + 8.5 * sstep(2.6, 7, r); if (gThr) sp = Math.min(sp, 1.5);
+    const thr = gs.fuel > 0 ? gThr : 0;
+    HG.step(gs, dt * sp, thr * gs.vx / v, thr * gs.vy / v);
+    gMother += dt * sp;
+    gTrail.push(gs.x, gs.y); if (gTrail.length > 1600) gTrail.splice(0, 2);
+    if (gs.over) gFinish();
+  }
+  gDraw(now / 1000);
+  requestAnimationFrame(gLoop);
+}
+function gDraw(tm) {
+  const x = gx, r = Math.hypot(gs.x, gs.y);
+  gView += ((r < 4.2 && !gs.over ? 4.8 : 11.6) - gView) * .04;
+  const top = 110, bottom = 170, cx = gW / 2, cy = top + (gH - top - bottom) / 2;
+  const sc = Math.min(gW - 24, gH - top - bottom) / 2 / gView;
+  const P = (wx, wy) => [cx + wx * sc, cy - wy * sc];
+  x.setTransform(gDPR, 0, 0, gDPR, 0, 0);
+  x.fillStyle = '#030309'; x.fillRect(0, 0, gW, gH);
+  for (const [sx, sy, sr, sa] of gStars) { x.globalAlpha = sa; x.fillStyle = '#fff'; x.fillRect(sx, sy, sr, sr); }
+  x.globalAlpha = 1;
+  // disc, photon ring, horizon
+  x.save(); x.translate(cx, cy); x.rotate(-tm * .25); const D = 9.5 * sc; x.globalAlpha = .5; x.drawImage(gDisk, -D, -D, D * 2, D * 2); x.restore(); x.globalAlpha = 1;
+  const hg = x.createRadialGradient(cx, cy, sc * .95, cx, cy, sc * 1.9); hg.addColorStop(0, 'rgba(255,190,120,.0)'); hg.addColorStop(.35, 'rgba(255,190,120,.35)'); hg.addColorStop(1, 'rgba(255,150,80,0)');
+  x.fillStyle = hg; x.beginPath(); x.arc(cx, cy, sc * 1.9, 0, 7); x.fill();
+  x.fillStyle = '#000'; x.beginPath(); x.arc(cx, cy, sc, 0, 7); x.fill();
+  x.strokeStyle = 'rgba(255,215,170,.7)'; x.lineWidth = 1.2; x.beginPath(); x.arc(cx, cy, sc * 1.5, 0, 7); x.stroke();
+  // mother ship orbit
+  x.setLineDash([3, 7]); x.strokeStyle = 'rgba(143,208,255,.28)'; x.lineWidth = 1; x.beginPath(); x.arc(cx, cy, HG.P.R0 * sc, 0, 7); x.stroke(); x.setLineDash([]);
+  const w0 = Math.sqrt(HG.GM * HG.P.R0) / (HG.P.R0 - 1) / HG.P.R0, ma = -Math.PI / 2 + w0 * gMother, [mx, my] = P(Math.cos(ma) * HG.P.R0, Math.sin(ma) * HG.P.R0);
+  x.strokeStyle = 'rgba(143,208,255,.85)'; x.lineWidth = 2; x.beginPath(); x.arc(mx, my, 7, 0, 7); x.stroke();
+  // probe
+  const [ppx, ppy] = P(gs.px, gs.py);
+  if (!gs.got) {
+    x.setLineDash([2, 5]); x.strokeStyle = 'rgba(143,208,255,.55)'; x.lineWidth = 1; x.beginPath(); x.arc(ppx, ppy, HG.P.PICK * sc, 0, 7); x.stroke(); x.setLineDash([]);
+    x.fillStyle = `rgba(143,208,255,${.7 + .3 * Math.sin(tm * 5)})`; x.beginPath(); x.arc(ppx, ppy, 4, 0, 7); x.fill();
+  }
+  // trail
+  if (gTrail.length > 3) { x.strokeStyle = 'rgba(226,223,247,.22)'; x.lineWidth = 1; x.beginPath(); for (let i = 0; i < gTrail.length; i += 2) { const [a, b] = P(gTrail[i], gTrail[i + 1]); i ? x.lineTo(a, b) : x.moveTo(a, b); } x.stroke(); }
+  // forecast
+  let pred = null;
+  if (!gs.over) {
+    pred = HG.predict(gs, 420, .7);
+    x.setLineDash([3, 6]); x.lineWidth = 2.2; x.strokeStyle = pred.over === 'lost' ? '#ff6b5a' : pred.got && !gs.got ? '#9dffb0' : '#8fd0ff';
+    x.beginPath(); const [s0, s1] = P(gs.x, gs.y); x.moveTo(s0, s1); for (let i = 0; i < pred.length; i += 2) { const [a, b] = P(pred[i], pred[i + 1]); x.lineTo(a, b); } x.stroke(); x.setLineDash([]);
+  }
+  // ship
+  if (gs.over !== 'lost') {
+    const [sx, sy] = P(gs.x, gs.y), ang = Math.atan2(-gs.vy, gs.vx);
+    x.save(); x.translate(sx, sy); x.rotate(ang);
+    if (gRun && gThr && gs.fuel > 0) { x.fillStyle = 'rgba(255,180,84,.9)'; x.beginPath(); const f = 8 + Math.random() * 5; if (gThr > 0) { x.moveTo(-6, -3); x.lineTo(-6 - f, 0); x.lineTo(-6, 3); } else { x.moveTo(6, -3); x.lineTo(6 + f, 0); x.lineTo(6, 3); } x.fill(); }
+    x.fillStyle = '#e2dff7'; x.beginPath(); x.moveTo(8, 0); x.lineTo(-6, -5); x.lineTo(-3, 0); x.lineTo(-6, 5); x.closePath(); x.fill();
+    x.restore();
+  }
+  // HUD
+  const ageNow = (Date.now() - birth) / YEAR, age = Math.floor(ageNow + gs.earth / MIN_YEAR);
+  $('gShip').textContent = shipHM(gs.ship); $('gEarth').textContent = earthFmt(gs.earth); $('gAge').textContent = isFinite(age) ? fmt(age) : '∞';
+  $('gFuel').style.width = (gs.fuel / HG.P.FUEL * 100).toFixed(1) + '%';
+  $('gHere').textContent = t('gHere', { s: r > 1.02 ? spanFmt(HG.dil(r)) : '∞' });
+  $('gHint').textContent = !gRun ? '' : gs.got ? t('gHintGot') : pred && pred.over === 'lost' ? t('gHintPlunge') : gs.minR < HG.P.RP + .9 && r > HG.P.RP + 1.2 ? t('gHintMiss') : t('gHint0');
+}
+function setThr(v) { gThr = v; $('gBrake').classList.toggle('on', v < 0); $('gGas').classList.toggle('on', v > 0); }
+[['gBrake', -1], ['gGas', 1]].forEach(([id, v]) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (er) {} setThr(v); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => b.addEventListener(ev, () => setThr(0)));
+  b.addEventListener('contextmenu', e => e.preventDefault());
+});
+const keyThr = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 };
+addEventListener('keydown', e => { if (gameEl.hidden) return; if (e.key === 'Escape') return gClose(); if (keyThr[e.key]) { e.preventDefault(); setThr(keyThr[e.key]); } });
+addEventListener('keyup', e => { if (!gameEl.hidden && keyThr[e.key]) setThr(0); });
+$('gameBtn').onclick = gOpen;
+$('gClose').onclick = gClose;
+$('gStart').onclick = gStart;
+$('gAgain').onclick = gStart;
+$('gCard').onclick = () => gRes && openCard('hole', gRes);
 
 /* ================= live numbers ================= */
 let lastBeatPhase = 0;
@@ -628,7 +763,7 @@ function paintPlanet(x, cx, cy, R, c1, c2, c3) {
   const sh = x.createLinearGradient(cx - R, cy - R, cx + R, cy + R); sh.addColorStop(.45, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,.75)');
   x.fillStyle = sh; x.fillRect(cx - R, cy - R, R * 2, R * 2); x.restore();
 }
-async function makeCard(kind) {
+async function makeCard(kind, res) {
   try { await Promise.all([document.fonts.load(`700 60px "${dispFont()}"`), document.fonts.load(`500 30px "${textFont()}"`), document.fonts.load('500 20px "JetBrains Mono"')]); } catch (e) {}
   const og = kind === 'og', W = og ? 1200 : 1080, H = og ? 630 : 1350;
   const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
@@ -644,6 +779,31 @@ async function makeCard(kind) {
     x.fillStyle = '#e2dff7'; fitFont(x, t('ogTitle'), 700, 62, dispFont(), W * .6); x.fillText(t('ogTitle'), X, 250);
     x.fillStyle = '#ffb454'; fitFont(x, t('ogSub'), 400, 30, textFont(), W * .55); wrapText(x, t('ogSub'), X, 320, W * .55, 42);
     x.fillStyle = '#ffb454'; x.font = '500 26px "JetBrains Mono",monospace'; x.fillText(host, X, H - 70);
+    return c;
+  }
+  if (kind === 'hole') {
+    const hx = rtl ? 280 : W - 280, hy = 330, R = 74;
+    x.save(); x.translate(hx, hy); x.scale(1, .34);
+    for (let i = 0; i < 70; i++) { const rr = R * (1.5 + i * .03); x.strokeStyle = `rgba(255,${Math.round(220 - i * 1.6)},${Math.round(160 - i * 1.6)},${.5 * (1 - i / 70)})`; x.lineWidth = 3; x.beginPath(); x.arc(0, 0, rr, 0, 7); x.stroke(); }
+    x.restore();
+    const halo = x.createRadialGradient(hx, hy, R * .95, hx, hy, R * 1.7); halo.addColorStop(0, 'rgba(255,200,140,.75)'); halo.addColorStop(.25, 'rgba(255,160,80,.3)'); halo.addColorStop(1, 'rgba(255,140,60,0)');
+    x.fillStyle = halo; x.beginPath(); x.arc(hx, hy, R * 1.7, 0, 7); x.fill();
+    x.fillStyle = '#000'; x.beginPath(); x.arc(hx, hy, R, 0, 7); x.fill();
+    x.save(); x.beginPath(); x.rect(hx - R * 3, hy, R * 6, R * 3); x.clip(); x.translate(hx, hy); x.scale(1, .34);
+    for (let i = 0; i < 70; i++) { const rr = R * (1.5 + i * .03); x.strokeStyle = `rgba(255,${Math.round(220 - i * 1.6)},${Math.round(160 - i * 1.6)},${.5 * (1 - i / 70)})`; x.lineWidth = 3; x.beginPath(); x.arc(0, 0, rr, 0, 7); x.stroke(); }
+    x.restore();
+    x.fillStyle = '#9a97c2'; x.font = '500 24px "JetBrains Mono",monospace'; x.fillText(t('cardHole').toUpperCase(), X, 120);
+    x.fillStyle = '#e2dff7'; fitFont(x, t('cardHoleEarth'), 500, 54, dispFont(), maxW); x.fillText(t('cardHoleEarth'), X, 650);
+    x.fillStyle = '#ffb454'; fitFont(x, res.earth, 700, 120, dispFont(), maxW); x.fillText(res.earth, X, 790);
+    x.fillStyle = 'rgba(120,126,200,.35)'; x.fillRect(pad, 860, W - pad * 2, 2);
+    [[res.ship, t('cardHoleShip')], [res.age, t('cardHoleAge')], [res.bd, t('cardHoleBd')]].forEach(([v, k], i) => {
+      const y = 935 + i * 104;
+      x.fillStyle = '#e2dff7'; fitFont(x, v, 500, 50, dispFont(), maxW); x.fillText(v, X, y);
+      x.fillStyle = '#9a97c2'; fitFont(x, k, 400, 26, textFont(), maxW); x.fillText(k, X, y + 38);
+    });
+    x.fillStyle = 'rgba(120,126,200,.35)'; x.fillRect(pad, H - 140, W - pad * 2, 2);
+    x.fillStyle = '#e2dff7'; fitFont(x, t('cardHoleCta'), 500, 34, textFont(), maxW * .55); x.fillText(t('cardHoleCta'), X, H - 70);
+    x.textAlign = rtl ? 'left' : 'right'; x.direction = 'ltr'; x.fillStyle = '#ffb454'; x.font = '500 26px "JetBrains Mono",monospace'; x.fillText(host, rtl ? pad : W - pad, H - 72);
     return c;
   }
   const now = Date.now(), days = (now - birth) / DAY;
@@ -672,13 +832,14 @@ function wrapText(x, text, X, y, maxW, lh) {
   for (const w of words) { const test = line ? line + ' ' + w : w; if (x.measureText(test).width > maxW && line) { x.fillText(line, X, y); line = w; y += lh; } else line = test; }
   if (line) x.fillText(line, X, y);
 }
-let cardUrl = null, cardFile = null;
-async function openCard() {
-  const c = await makeCard('me');
+let cardUrl = null, cardFile = null, cardText = '';
+async function openCard(kind = 'me', res = null) {
+  const c = await makeCard(kind, res);
+  cardText = kind === 'hole' ? t('gShareText', res) : t('cardShareText');
   const blob = await new Promise(r => c.toBlob(r, 'image/png'));
   if (cardUrl) URL.revokeObjectURL(cardUrl);
   cardUrl = URL.createObjectURL(blob);
-  cardFile = new File([blob], `cosmos-${input.value}.png`, { type: 'image/png' });
+  cardFile = new File([blob], kind === 'hole' ? 'cosmos-black-hole.png' : `cosmos-${input.value}.png`, { type: 'image/png' });
   $('cardImg').src = cardUrl; $('cardImg').alt = t('cardMars', { n: '', years: '' });
   $('cardSave').href = cardUrl; $('cardSave').download = cardFile.name;
   let canShare = false; try { canShare = !!(navigator.canShare && navigator.canShare({ files: [cardFile] })); } catch (e) {}
@@ -686,10 +847,10 @@ async function openCard() {
   $('cardModal').hidden = false;
 }
 function closeCard() { $('cardModal').hidden = true; }
-$('cardBtn').onclick = openCard;
+$('cardBtn').onclick = () => openCard();
 $('cardClose').onclick = closeCard;
 $('cardModal').addEventListener('click', e => { if (e.target.id === 'cardModal') closeCard(); });
-$('cardShare').onclick = async () => { try { await navigator.share({ files: [cardFile], text: t('cardShareText') + ' ' + shareUrl(false) }); } catch (e) {} };
+$('cardShare').onclick = async () => { try { await navigator.share({ files: [cardFile], text: cardText + ' ' + shareUrl() }); } catch (e) {} };
 
 /* ================= THREE scene ================= */
 let G = null;
@@ -1138,7 +1299,7 @@ let last = performance.now(), lastTick = 0, lastWeeks = 0;
 function loop(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   if (now - lastTick > 90) { tick(); lastTick = now; }
-  if (G) G.frame(dt, now / 1000);
+  if (G && gameEl.hidden) G.frame(dt, now / 1000);
   if (visible.has('lightC')) drawLight(now);
   if (visible.has('ecg')) drawEcg(now);
   if (visible.has('births')) drawBirths(now, dt);
@@ -1148,7 +1309,7 @@ function loop(now) {
   }
   requestAnimationFrame(loop);
 }
-let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { G && G.resize(); sizeAll(); }, 120); });
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { G && G.resize(); sizeAll(); if (!gameEl.hidden) gSize(); }, 120); });
 drawLight(0); drawEcg(0);
 document.fonts && document.fonts.ready.then(() => { sizeAll(); odo.dataset.len = ''; tick(); });
 setInterval(renderStatic, 60000);
@@ -1157,4 +1318,5 @@ requestAnimationFrame(loop);
 // for the build script: render the static link-preview image in a given language
 window.__ogCard = async l => { applyLang(l, false); const c = await makeCard('og'); return c.toDataURL('image/png'); };
 window.__meCard = async () => (await makeCard('me')).toDataURL('image/png');
+window.__holeCard = res => openCard('hole', res);
 })();
