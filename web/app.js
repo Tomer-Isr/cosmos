@@ -336,10 +336,12 @@ function birthdaysIn(years) {
 }
 
 /* ================= black hole game ================= */
-// top-down view of the disc plane; physics in game-core.js (rs = 1, 1 sim unit = 1 minute of ship time)
+// one button: dive when the line is green, then stay at the probe as long as you dare and go home.
+// Top-down view of the disc plane; physics in game-core.js (rs = 1).
 const HG = window.HoleGame, MIN_YEAR = 525949;
+const G_ORBIT = 20, G_SLOW = 6, G_DIVE = 8, G_HOVER = 6, G_FULL = 8; // sim speeds; ship minutes per second at the probe; seconds for 100 % data
 const gameEl = $('game'), gc = $('gameC'), gx = gc.getContext('2d');
-let gArmed = false, gs = null, gRun = false, gThr = 0, gView = 11.5, gTrail = [], gW = 0, gH = 0, gDPR = 1, gStars = [], gDisk = null, gLast = 0, gMother = 0, gRes = null;
+let gs = null, gMode = 'intro', gView = 11.5, gTrail = [], gW = 0, gH = 0, gDPR = 1, gStars = [], gDisk = null, gLast = 0, gMother = 0, gRes = null, gData = 0, gTries = 0, gPath = null, gMissT = 0, gLow = false;
 const shipHM = min => t('hm', { h: fmt(Math.floor(min / 60)), m: fmt(Math.floor(min % 60)) });
 const earthFmt = min => isFinite(min) ? spanFmt(min / 60) : '∞';
 function gSize() {
@@ -364,109 +366,107 @@ function diskTex() {
 }
 function gOpen() {
   gameEl.hidden = false; root.classList.add('gaming'); gSize(); if (!gDisk) gDisk = diskTex();
-  gReset(); $('gIntro').hidden = false; $('gEnd').hidden = true; gRun = false;
+  gReset(); gMode = 'intro'; $('gIntro').hidden = false; $('gEnd').hidden = true;
   gLast = performance.now(); requestAnimationFrame(gLoop);
 }
-function gReset() { gs = HG.make(-Math.PI / 2, Math.PI * .72); gTrail = []; gMother = 0; gThr = 0; gRes = null; gView = 11.5; }
-function gClose() { gameEl.hidden = true; root.classList.remove('gaming'); gRun = false; gThr = 0; }
-function gStart() { gReset(); $('gIntro').hidden = true; $('gEnd').hidden = true; gRun = true; gArmed = false; }
-function gFinish() {
-  gRun = false; gThr = 0; setThr(0);
-  const o = gs.over, ageNow = (Date.now() - birth) / YEAR;
+function gReset() { gs = HG.make(-Math.PI / 2 - 1.6, Math.PI * .72); gTrail = []; gMother = 0; gRes = null; gView = 11.5; gData = 0; gTries = 0; gPath = null; }
+function gClose() { gameEl.hidden = true; root.classList.remove('gaming'); gMode = 'intro'; }
+function gStart() { gReset(); $('gIntro').hidden = true; $('gEnd').hidden = true; gMode = 'orbit'; }
+function gAct() {
+  if (gMode === 'orbit') { HG.slow(gs, HG.DV); gTries++; gMode = 'dive'; gTrail = []; gLow = false; }
+  else if (gMode === 'hover') { HG.launchHome(gs); gMode = 'home'; gLow = true; }
+}
+function gFinish(o) {
+  gMode = 'end';
+  const ageNow = (Date.now() - birth) / YEAR;
   if (o === 'home') {
     const ey = gs.earth / MIN_YEAR, age = Math.floor(ageNow + ey);
-    gRes = { ship: shipHM(gs.ship), earth: earthFmt(gs.earth), age: `${fmt(age)} ${yrs(age)}`, bd: fmt(birthdaysIn(ey)) };
+    gRes = { ship: shipHM(gs.ship), earth: earthFmt(gs.earth), age: `${fmt(age)} ${yrs(age)}`, bd: fmt(birthdaysIn(ey)), data: Math.round(gData * 100) + '%' };
     $('gEndH').textContent = t('gWinH'); $('gEndP').textContent = t('gWinP', gRes);
   } else {
-    gRes = null;
-    $('gEndH').textContent = t(o === 'lost' ? 'gLostH' : 'gAwayH'); $('gEndP').textContent = t(o === 'lost' ? 'gLostP' : 'gAwayP');
+    gRes = null; $('gEndH').textContent = t('gFailH'); $('gEndP').textContent = t('gFailP');
   }
   $('gCard').hidden = !gRes; $('gEnd').hidden = false;
 }
 function gLoop(now) {
   if (gameEl.hidden) return;
   const dt = Math.min(.05, Math.max(0, (now - gLast) / 1000)); gLast = now;
-  if (gRun && gArmed && !gs.over) {
-    const r = Math.hypot(gs.x, gs.y), v = Math.hypot(gs.vx, gs.vy);
-    let sp = 1.5 + 8.5 * sstep(2.6, 7, r); if (gThr) sp = Math.min(sp, 1.5);
-    const thr = gs.fuel > 0 ? gThr : 0;
-    HG.step(gs, dt * sp, thr * gs.vx / v, thr * gs.vy / v);
-    gMother += dt * sp;
+  if (gMode === 'orbit') {
+    gPath = HG.divePath(gs, 1.2);
+    // slow the orbit down while the green moment is near, so there is time to press
+    HG.step(gs, dt * (gPath.near < HG.P.PICK * 2.6 ? G_SLOW : G_ORBIT)); gMother = Math.atan2(gs.y, gs.x);
+  } else if (gMode === 'dive' || gMode === 'home') {
+    const r0 = Math.hypot(gs.x, gs.y); HG.step(gs, dt * G_DIVE); const r1 = Math.hypot(gs.x, gs.y);
     gTrail.push(gs.x, gs.y); if (gTrail.length > 1600) gTrail.splice(0, 2);
-    if (gs.over) gFinish();
+    gMother += dt * G_DIVE * Math.sqrt(HG.GM * HG.P.R0) / (HG.P.R0 - 1) / HG.P.R0;
+    if (gMode === 'dive' && Math.hypot(gs.x - gs.px, gs.y - gs.py) < HG.P.PICK) { gMode = 'hover'; gs.x = gs.px; gs.y = gs.py; }
+    if (r1 < HG.P.RP + 2) gLow = true;
+    if (gMode === 'hover') {}
+    else if (gLow && r1 > HG.P.R0 - .6 && r1 <= r0) {
+      if (gMode === 'home') gFinish('home');
+      else if (gTries >= HG.P.TRIES) gFinish('fail');
+      else { HG.orbit(gs, Math.atan2(gs.y, gs.x)); gMode = 'orbit'; gMissT = now; }
+    }
+  } else if (gMode === 'hover') {
+    const m = dt * G_HOVER; gs.ship += m; gs.earth += m * HG.dil(HG.P.RP); gData = Math.min(1, gData + dt / G_FULL);
   }
-  gDraw(now / 1000);
+  gDraw(now / 1000, now);
   requestAnimationFrame(gLoop);
 }
-function gDraw(tm) {
+function gDraw(tm, now) {
   const x = gx, r = Math.hypot(gs.x, gs.y);
-  gView += ((r < 4.2 && !gs.over ? 4.8 : 11.6) - gView) * .04;
-  const top = 110, bottom = 170, cx = gW / 2, cy = top + (gH - top - bottom) / 2;
+  gView += ((gMode === 'hover' || (gMode !== 'orbit' && r < 4.5) ? 5 : 11.6) - gView) * .04;
+  const top = 150, bottom = 110, cx = gW / 2, cy = top + (gH - top - bottom) / 2;
   const sc = Math.min(gW - 24, gH - top - bottom) / 2 / gView;
   const P = (wx, wy) => [cx + wx * sc, cy - wy * sc];
   x.setTransform(gDPR, 0, 0, gDPR, 0, 0);
   x.fillStyle = '#030309'; x.fillRect(0, 0, gW, gH);
   for (const [sx, sy, sr, sa] of gStars) { x.globalAlpha = sa; x.fillStyle = '#fff'; x.fillRect(sx, sy, sr, sr); }
   x.globalAlpha = 1;
-  // disc, photon ring, horizon
   x.save(); x.translate(cx, cy); x.rotate(-tm * .25); const D = 9.5 * sc; x.globalAlpha = .5; x.drawImage(gDisk, -D, -D, D * 2, D * 2); x.restore(); x.globalAlpha = 1;
-  const hg = x.createRadialGradient(cx, cy, sc * .95, cx, cy, sc * 1.9); hg.addColorStop(0, 'rgba(255,190,120,.0)'); hg.addColorStop(.35, 'rgba(255,190,120,.35)'); hg.addColorStop(1, 'rgba(255,150,80,0)');
+  const hg = x.createRadialGradient(cx, cy, sc * .95, cx, cy, sc * 1.9); hg.addColorStop(0, 'rgba(255,190,120,0)'); hg.addColorStop(.35, 'rgba(255,190,120,.35)'); hg.addColorStop(1, 'rgba(255,150,80,0)');
   x.fillStyle = hg; x.beginPath(); x.arc(cx, cy, sc * 1.9, 0, 7); x.fill();
   x.fillStyle = '#000'; x.beginPath(); x.arc(cx, cy, sc, 0, 7); x.fill();
   x.strokeStyle = 'rgba(255,215,170,.7)'; x.lineWidth = 1.2; x.beginPath(); x.arc(cx, cy, sc * 1.5, 0, 7); x.stroke();
-  // mother ship orbit
+  // parking orbit and base
   x.setLineDash([3, 7]); x.strokeStyle = 'rgba(143,208,255,.28)'; x.lineWidth = 1; x.beginPath(); x.arc(cx, cy, HG.P.R0 * sc, 0, 7); x.stroke(); x.setLineDash([]);
-  const w0 = Math.sqrt(HG.GM * HG.P.R0) / (HG.P.R0 - 1) / HG.P.R0, ma = -Math.PI / 2 + w0 * gMother, [mx, my] = P(Math.cos(ma) * HG.P.R0, Math.sin(ma) * HG.P.R0);
-  x.strokeStyle = 'rgba(143,208,255,.85)'; x.lineWidth = 2; x.beginPath(); x.arc(mx, my, 7, 0, 7); x.stroke();
+  x.font = '500 12px "JetBrains Mono",monospace'; x.textAlign = 'center'; x.direction = 'ltr';
+  if (gMode !== 'orbit') { const [mx, my] = P(Math.cos(gMother) * HG.P.R0, Math.sin(gMother) * HG.P.R0);
+    x.strokeStyle = 'rgba(143,208,255,.85)'; x.lineWidth = 2; x.beginPath(); x.arc(mx, my, 7, 0, 7); x.stroke(); x.fillStyle = 'rgba(143,208,255,.85)'; x.fillText(t('gLblBase'), mx, my - 13); }
   // probe
   const [ppx, ppy] = P(gs.px, gs.py);
-  if (!gs.got) {
-    x.setLineDash([2, 5]); x.strokeStyle = 'rgba(143,208,255,.55)'; x.lineWidth = 1; x.beginPath(); x.arc(ppx, ppy, HG.P.PICK * sc, 0, 7); x.stroke(); x.setLineDash([]);
-    x.fillStyle = `rgba(143,208,255,${.7 + .3 * Math.sin(tm * 5)})`; x.beginPath(); x.arc(ppx, ppy, 4, 0, 7); x.fill();
-  }
-  x.font = '500 12px "JetBrains Mono",monospace'; x.textAlign = 'center'; x.direction = 'ltr';
-  x.fillStyle = 'rgba(143,208,255,.85)'; x.fillText(t('gLblBase'), mx, my - 13);
-  if (!gs.got) x.fillText(t('gLblProbe'), ppx, ppy - HG.P.PICK * sc - 6);
+  x.setLineDash([2, 5]); x.strokeStyle = 'rgba(143,208,255,.55)'; x.lineWidth = 1; x.beginPath(); x.arc(ppx, ppy, HG.P.PICK * sc, 0, 7); x.stroke(); x.setLineDash([]);
+  x.fillStyle = `rgba(143,208,255,${.7 + .3 * Math.sin(tm * 5)})`; x.beginPath(); x.arc(ppx, ppy, 4, 0, 7); x.fill();
+  x.fillText(t('gLblProbe'), ppx, ppy - HG.P.PICK * sc - 6);
   // trail
   if (gTrail.length > 3) { x.strokeStyle = 'rgba(226,223,247,.22)'; x.lineWidth = 1; x.beginPath(); for (let i = 0; i < gTrail.length; i += 2) { const [a, b] = P(gTrail[i], gTrail[i + 1]); i ? x.lineTo(a, b) : x.moveTo(a, b); } x.stroke(); }
-  // forecast
-  let pred = null;
-  if (!gs.over) {
-    pred = HG.predict(gs, 420, .7);
-    x.setLineDash([3, 6]); x.lineWidth = 2.2; x.strokeStyle = pred.over === 'lost' ? '#ff6b5a' : pred.got && !gs.got ? '#9dffb0' : '#8fd0ff';
-    x.beginPath(); const [s0, s1] = P(gs.x, gs.y); x.moveTo(s0, s1); for (let i = 0; i < pred.length; i += 2) { const [a, b] = P(pred[i], pred[i + 1]); x.lineTo(a, b); } x.stroke(); x.setLineDash([]);
+  // where a dive from here would go: green = it docks with the probe
+  const green = gMode === 'orbit' && gPath && gPath.near < HG.P.PICK * .8;
+  if (gMode === 'orbit' && gPath) {
+    x.setLineDash([3, 6]); x.lineWidth = green ? 3 : 2; x.strokeStyle = green ? '#9dffb0' : 'rgba(143,208,255,.55)';
+    x.beginPath(); const [s0, s1] = P(gs.x, gs.y); x.moveTo(s0, s1); for (let i = 0; i < gPath.length; i += 2) { const [a, b] = P(gPath[i], gPath[i + 1]); x.lineTo(a, b); } x.stroke(); x.setLineDash([]);
   }
   // ship
-  if (gs.over !== 'lost') {
-    const [sx, sy] = P(gs.x, gs.y), ang = Math.atan2(-gs.vy, gs.vx);
-    x.save(); x.translate(sx, sy); x.rotate(ang);
-    if (gRun && gThr && gs.fuel > 0) { x.fillStyle = 'rgba(255,180,84,.9)'; x.beginPath(); const f = 8 + Math.random() * 5; if (gThr > 0) { x.moveTo(-6, -3); x.lineTo(-6 - f, 0); x.lineTo(-6, 3); } else { x.moveTo(6, -3); x.lineTo(6 + f, 0); x.lineTo(6, 3); } x.fill(); }
-    x.fillStyle = '#e2dff7'; x.beginPath(); x.moveTo(8, 0); x.lineTo(-6, -5); x.lineTo(-3, 0); x.lineTo(-6, 5); x.closePath(); x.fill();
-    x.restore();
-    x.fillStyle = '#e2dff7'; x.fillText(t('gLblYou'), sx, sy + 22);
-  }
+  const [sx, sy] = gMode === 'hover' ? [ppx, ppy] : P(gs.x, gs.y), ang = Math.atan2(-gs.vy, gs.vx);
+  x.save(); x.translate(sx, sy); x.rotate(gMode === 'hover' ? -Math.PI / 2 : ang);
+  if (gMode === 'hover') { x.fillStyle = 'rgba(255,180,84,.9)'; x.beginPath(); const f = 8 + Math.random() * 5; x.moveTo(-6, -3); x.lineTo(-6 - f, 0); x.lineTo(-6, 3); x.fill(); }
+  x.fillStyle = '#e2dff7'; x.beginPath(); x.moveTo(9, 0); x.lineTo(-7, -6); x.lineTo(-3, 0); x.lineTo(-7, 6); x.closePath(); x.fill();
+  x.restore(); x.fillStyle = '#e2dff7'; x.fillText(t('gLblYou'), sx, sy + 24);
   // HUD
   const ageNow = (Date.now() - birth) / YEAR, age = Math.floor(ageNow + gs.earth / MIN_YEAR);
   $('gShip').textContent = shipHM(gs.ship); $('gEarth').textContent = earthFmt(gs.earth); $('gAge').textContent = isFinite(age) ? fmt(age) : '∞';
-  $('gFuel').style.width = (gs.fuel / HG.P.FUEL * 100).toFixed(1) + '%';
-  $('gHere').textContent = t('gHere', { s: r > 1.02 ? spanFmt(HG.dil(r)) : '∞' });
-  // step-by-step guide: what to do right now, and which button to press
-  const red = pred && pred.over === 'lost', green = pred && pred.got && !gs.got;
-  const k = !gRun ? '' : red ? 'gH5' : !gArmed ? 'gH1' : gs.got ? 'gH6' : green ? (gThr ? 'gH3' : 'gH4') : gThr < 0 ? 'gH2' : gs.minR < HG.P.RP + .9 && r > HG.P.RP + 1.2 ? 'gH7' : gThr ? 'gH2' : 'gH1';
+  $('gData').style.width = (gData * 100).toFixed(1) + '%'; $('gDataN').textContent = Math.round(gData * 100) + '%';
+  $('gTries').textContent = t('gTries', { n: Math.max(0, HG.P.TRIES - gTries) });
+  const k = gMode === 'orbit' ? (green ? 'gH2' : now - gMissT < 3500 && gTries ? 'gH6' : 'gH1') : gMode === 'dive' ? 'gH3' : gMode === 'hover' ? 'gH4' : gMode === 'home' ? 'gH5' : '';
   $('gHint').textContent = k ? t(k) : '';
-  $('gBrake').classList.toggle('cue', gRun && (k === 'gH1' || k === 'gH2' || k === 'gH7'));
-  $('gGas').classList.toggle('cue', gRun && k === 'gH5');
+  $('gHint').classList.toggle('go', green || gMode === 'hover');
+  const b = $('gAct'), can = (gMode === 'orbit' && green) || gMode === 'hover';
+  b.textContent = t(gMode === 'hover' || gMode === 'home' ? 'gHome' : 'gDive');
+  b.disabled = !(gMode === 'orbit' || gMode === 'hover'); b.classList.toggle('cue', can);
+  b.hidden = gMode === 'intro' || gMode === 'end';
 }
-function setThr(v) { if (v && gRun) gArmed = true; gThr = v; $('gBrake').classList.toggle('on', v < 0); $('gGas').classList.toggle('on', v > 0); }
-[['gBrake', -1], ['gGas', 1]].forEach(([id, v]) => {
-  const b = $(id);
-  b.addEventListener('pointerdown', e => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (er) {} setThr(v); });
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => b.addEventListener(ev, () => setThr(0)));
-  b.addEventListener('contextmenu', e => e.preventDefault());
-});
-const keyThr = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 };
-addEventListener('keydown', e => { if (gameEl.hidden) return; if (e.key === 'Escape') return gClose(); if (keyThr[e.key]) { e.preventDefault(); setThr(keyThr[e.key]); } });
-addEventListener('keyup', e => { if (!gameEl.hidden && keyThr[e.key]) setThr(0); });
+$('gAct').addEventListener('pointerdown', e => { e.preventDefault(); gAct(); });
+addEventListener('keydown', e => { if (gameEl.hidden) return; if (e.key === 'Escape') return gClose(); if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (gMode === 'intro') gStart(); else gAct(); } });
 $('gameBtn').onclick = gOpen;
 $('gClose').onclick = gClose;
 $('gStart').onclick = gStart;
@@ -805,7 +805,7 @@ async function makeCard(kind, res) {
     x.fillStyle = '#e2dff7'; fitFont(x, t('cardHoleEarth'), 500, 54, dispFont(), maxW); x.fillText(t('cardHoleEarth'), X, 650);
     x.fillStyle = '#ffb454'; fitFont(x, res.earth, 700, 120, dispFont(), maxW); x.fillText(res.earth, X, 790);
     x.fillStyle = 'rgba(120,126,200,.35)'; x.fillRect(pad, 860, W - pad * 2, 2);
-    [[res.ship, t('cardHoleShip')], [res.age, t('cardHoleAge')], [res.bd, t('cardHoleBd')]].forEach(([v, k], i) => {
+    [[res.ship, t('cardHoleShip')], [res.age, t('cardHoleAge')], [res.data, t('cardHoleData')]].forEach(([v, k], i) => {
       const y = 935 + i * 104;
       x.fillStyle = '#e2dff7'; fitFont(x, v, 500, 50, dispFont(), maxW); x.fillText(v, X, y);
       x.fillStyle = '#9a97c2'; fitFont(x, k, 400, 26, textFont(), maxW); x.fillText(k, X, y + 38);
