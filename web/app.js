@@ -116,7 +116,7 @@ function renderInvite() {
 input.addEventListener('change', () => {
   const d = validDate(input.value); if (!d) return;
   birth = d; ls.set('cosmos-birth', input.value); $('sample').hidden = true; ownDate = true;
-  renderStatic(); renderCompare(); renderInvite(); weeksAnim = 0; drawWeeks(1);
+  renderStatic(); renderCompare(); renderHole(); renderInvite(); weeksAnim = 0; drawWeeks(1);
 });
 const onFriend = () => { friend = validDate(fdate.value); renderCompare(); };
 fdate.addEventListener('change', onFriend); fname.addEventListener('input', onFriend);
@@ -299,6 +299,35 @@ function renderCompare() {
   renderChips(); updatePlanetLabels();
 }
 $('flyFriend').onclick = () => friendStar && (friendStar[0] === 'sun' ? fly('planet', 'earth') : fly('star', friendStar[0]));
+
+/* ================= black hole: time dilation ================= */
+// hovering at r = rs(1 + x) from a non-rotating hole: your clock runs sqrt((1+x)/x) times slower than Earth's
+const HOLE_RS_KM = 2.954 * 1e8; // 100 million Suns
+const HOLE_XMIN = 1 / (61362 * 61362 - 1); // 1 hour = 7 years, as on Miller's planet
+const holeR = $('holeR');
+let holeS = +holeR.value / 1000;
+const holeX = () => Math.pow(10, Math.log10(9) + (Math.log10(HOLE_XMIN) - Math.log10(9)) * holeS);
+const holeDist = () => 34 - 20 * Math.pow(holeS, .8); // where the camera hangs in the picture (not to scale)
+function spanFmt(h) {
+  if (h < 48) return `${fmt(h, h < 1.1 ? 3 : 1)} ${pl(Math.round(h * 10) / 10, D.hours)}`;
+  const d = h / 24; if (d < 730) return `${fmt(Math.round(d))} ${dys(Math.round(d))}`;
+  const y = d / 365.2425; return `${fmt(y, 1)} ${yrs(y)}`;
+}
+function distFmt(km) { return km >= 1e6 ? `${fmt(km / 1e6, 1)} ${t('mlnKm')}` : km >= 1 ? `${fmt(Math.round(km))} ${t('km')}` : `${fmt(Math.max(1, Math.round(km * 1000)))} ${t('m')}`; }
+function renderHole() {
+  const x = holeX(), f = Math.sqrt((1 + x) / x), earthH = f, earthY = earthH / 24 / 365.2425;
+  const now = new Date(), ageNow = (now - birth) / YEAR, back = new Date(now.getTime() + earthY * YEAR);
+  let bd = 0; for (let y = now.getFullYear(); y <= back.getFullYear(); y++) { const b = new Date(y, birth.getMonth(), birth.getDate()); if (b > now && b <= back) bd++; }
+  $('holeDist').textContent = distFmt(x * HOLE_RS_KM);
+  $('holeHour').textContent = spanFmt(earthH);
+  $('holeHourN').textContent = t('nHoleHour', { f: f < 10 ? fmt(f, 3) : fmt(Math.round(f)) });
+  const ageBack = Math.floor(ageNow + earthY);
+  $('holeAge').textContent = `${fmt(ageBack)} ${yrs(ageBack)}`;
+  $('holeAgeN').textContent = t('nHoleAge', { n: fmt(Math.floor(ageNow)) + ' ' + yrs(Math.floor(ageNow)) });
+  $('holeBd').textContent = fmt(bd);
+  $('holeMiller').hidden = f < 50000;
+}
+holeR.addEventListener('input', () => { holeS = +holeR.value / 1000; renderHole(); });
 
 /* ================= live numbers ================= */
 let lastBeatPhase = 0;
@@ -866,6 +895,60 @@ function initScene() {
   scene.add(lightSphere);
   const sphereR = () => 70 + (Date.now() - birth) / YEAR * 11;
 
+  // black hole: full-screen ray tracing in Schwarzschild geometry (rs = 1), drawn at reduced resolution over the scene
+  const qcam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.PlaneGeometry(2, 2);
+  const bhRT = new THREE.WebGLRenderTarget(4, 4, { depthBuffer: false, stencilBuffer: false });
+  const bhMat = new THREE.ShaderMaterial({
+    uniforms: { uRes: { value: new THREE.Vector2(4, 4) }, uTime: { value: 0 }, uDist: { value: 18 }, uAz: { value: 0 }, uShift: { value: 0 } },
+    vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`,
+    fragmentShader: `precision highp float;uniform vec2 uRes;uniform float uTime,uDist,uAz,uShift;varying vec2 vUv;
+      float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+      float h31(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+      float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1,0)),f.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x),f.y);}
+      float fb(vec2 p){float s=0.,a=.5;for(int i=0;i<4;i++){s+=a*vn(p);p=p*2.03+17.1;a*=.5;}return s;}
+      vec3 sky(vec3 d){vec3 c=vec3(0.);
+        for(int k=0;k<2;k++){float sc=k==0?90.:220.;vec3 g=d*sc;vec3 i=floor(g);float h=h31(i);
+          if(h>(k==0?.985:.975)){vec3 f=fract(g)-.5;float b=smoothstep(.3,.0,length(f))*(h-.97)*40.;c+=b*mix(vec3(1.,.85,.7),vec3(.75,.85,1.),h31(i+3.));}}
+        float band=exp(-pow(d.y*3.5+.35*d.x,2.)*2.);c+=vec3(.5,.42,.36)*band*(.05+.1*fb(d.xz*6.+d.y*3.));return c;}
+      vec3 diskCol(vec3 p,vec3 dir,float r){
+        float t=pow(1./r,.75)*pow(max(1.-sqrt(3./r),0.),.25)*2.1;
+        float w=pow(r,-1.5)*.9;float a=-w*uTime;vec2 q=mat2(cos(a),-sin(a),sin(a),cos(a))*p.xz;
+        float n=.3+.85*fb(vec2(r*2.6+2.2*fb(q*.6),fb(q*1.1)*2.5))*smoothstep(.15,.6,fb(q*2.3+r));
+        vec3 v=normalize(vec3(-p.z,0.,p.x))*sqrt(.5/r);float b=length(v);
+        float D=1./((1./sqrt(1.-b*b))*(1.-dot(v,-normalize(dir))));float gr=sqrt(1.-1./r);
+        float I=t*pow(D*gr,3.)*n;
+        vec3 hot=vec3(1.,.95,.86),warm=vec3(1.,.48,.12);vec3 c=mix(warm,hot,clamp(I*.9,0.,1.));
+        return c*I*4.2;}
+      void main(){
+        vec2 uv=(vUv*2.-1.);uv.x-=uShift*2.;uv.x*=uRes.x/uRes.y;
+        float el=.085;vec3 ro=vec3(sin(uAz)*cos(el),sin(el),cos(uAz)*cos(el))*uDist;
+        vec3 fw=normalize(-ro),rt=normalize(cross(fw,vec3(0.,1.,0.))),up=cross(rt,fw);
+        vec3 dir=normalize(fw*2.6+uv.x*rt+uv.y*up);
+        vec3 pos=ro;vec3 h=cross(pos,dir);float h2=dot(h,h);
+        vec3 col=vec3(0.);float al=0.;bool hole=false;
+        for(int i=0;i<${mob ? 200 : 340};i++){
+          float r2=dot(pos,pos);float r=sqrt(r2);
+          if(r<1.){hole=true;break;}
+          float dt=clamp(.045*r,.012,1.2);
+          vec3 acc=-1.5*h2*pos/(r2*r2*r);
+          vec3 np=pos+dir*dt;dir+=acc*dt;
+          if(pos.y*np.y<0.){vec3 p=mix(pos,np,pos.y/(pos.y-np.y));float rr=length(p.xz);
+            if(rr>3.&&rr<13.){float e=smoothstep(3.,3.25,rr)*(1.-smoothstep(8.,13.,rr));float a=clamp(e*.92,0.,1.);
+              col+=(1.-al)*a*diskCol(p,dir,rr);al+=(1.-al)*a;if(al>.98)break;}}
+          pos=np;if(r>uDist*1.6&&dot(pos,dir)>0.)break;}
+        if(!hole)col+=(1.-al)*sky(normalize(dir));
+        col=1.-exp(-col*1.4);gl_FragColor=vec4(pow(col,vec3(.9)),1.);}`,
+  });
+  const bhScene = new THREE.Scene(), bhQuad = new THREE.Mesh(quad, bhMat); bhQuad.frustumCulled = false; bhScene.add(bhQuad);
+  const bhOut = new THREE.MeshBasicMaterial({ map: bhRT.texture, transparent: true, depthTest: false, depthWrite: false });
+  const outScene = new THREE.Scene(), outQuad = new THREE.Mesh(quad, bhOut); outQuad.frustumCulled = false; outScene.add(outQuad);
+  function sizeBH() {
+    const k = PR * (mob ? .5 : .75), w = Math.max(4, Math.round(innerWidth * k)), h = Math.max(4, Math.round(innerHeight * k));
+    bhRT.setSize(w, h); bhMat.uniforms.uRes.value.set(w, h);
+  }
+  sizeBH();
+  let bhDist = 34;
+
   let focus = null, fw = 0;
   function flyTo(kind, key) {
     if (!kind) { focus = null; return; }
@@ -922,6 +1005,7 @@ function initScene() {
       { T: e, O: comb([r, .95], [tg, .45], [UP, .4]), sx: mob ? 0 : .24, sy: mob ? -.2 : 0, dim: mob ? .4 : .05, orb: .1 },
       { T: ORIGIN, O: V(40, 380, 900), sx: 0, sy: 0, dim: .55, orb: .6 },
       { T: ORIGIN, O: comb([V(-.7, 0, .7), mob ? 120 : 52], [UP, mob ? 70 : 30]), sx: mob ? 0 : .22, sy: mob ? -.06 : 0, dim: mob ? .45 : .12, orb: 1 },
+      { T: Gc, O: V(260, 190, 760), sx: mob ? 0 : .18, sy: mob ? -.06 : 0, dim: mob ? .35 : .1, orb: 0 },
     ];
   }
   function blend(u) {
@@ -945,6 +1029,7 @@ function initScene() {
     mob = innerWidth < 760;
     renderer.setSize(innerWidth, innerHeight, false);
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    sizeBH();
   }
 
   let us = reduce ? scrollU() : 2.2; const t0 = performance.now();
@@ -1003,7 +1088,14 @@ function initScene() {
       beamGeo.attributes.position.needsUpdate = true;
     }
     beamMat.uniforms.uOp.value = focS ? fw : beamMat.uniforms.uOp.value * .9; beamMat.uniforms.uTime.value = tm;
-    renderer.render(scene, camera);
+    const bw = sstep(.3, 1, st.w(10));
+    if (bw < .999) renderer.render(scene, camera);
+    if (bw > .003) {
+      bhDist += (holeDist() - bhDist) * (1 - Math.exp(-dt * 2.5));
+      const u = bhMat.uniforms; u.uTime.value = reduce ? 0 : tm; u.uDist.value = bhDist; u.uAz.value = reduce ? .6 : .6 + tm * .02; u.uShift.value = st.sx;
+      renderer.setRenderTarget(bhRT); renderer.render(bhScene, qcam); renderer.setRenderTarget(null);
+      bhOut.opacity = bw; renderer.autoClear = false; renderer.render(outScene, qcam); renderer.autoClear = true;
+    }
   }
   return { frame, resize, fly: flyTo, relabel };
 }
@@ -1027,7 +1119,7 @@ function applyLang(l, user) {
     ls.set('cosmos-lang', l);
     try { if (location.protocol.startsWith('http')) history.replaceState(null, '', pathFor(l) + location.search); } catch (e) {}
   }
-  renderStatic(); renderCompare(); tick();
+  renderStatic(); renderCompare(); renderHole(); tick();
   G && G.relabel();
   if (lastFly) fillFocus(...lastFly);
   sizeAll();
