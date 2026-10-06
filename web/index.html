@@ -55,6 +55,7 @@
     <div class="eyebrow" data-i18n="eyebrowHero"></div>
     <h1 id="h1"></h1>
     <p class="lead" data-i18n="lead"></p>
+    <p class="invite" id="invite" hidden></p>
     <form class="birth" id="form" autocomplete="off">
       <label for="birth"><span data-i18n="birthLabel"></span>
         <input type="date" id="birth" min="1900-01-01" required>
@@ -207,6 +208,7 @@
         <form class="cmp-form" id="cmpForm" autocomplete="off">
           <label for="fname"><span data-i18n="cmpName"></span><input type="text" id="fname" maxlength="24"></label>
           <label for="fdate"><span data-i18n="cmpDate"></span><input type="date" id="fdate" min="1900-01-01"></label>
+          <label for="myname"><span data-i18n="cmpMyName"></span><input type="text" id="myname" maxlength="24"></label>
         </form>
         <div class="grid" id="cmpGrid">
           <div class="cell"><div class="k" data-i18n="kDiff"></div><div class="v" id="cDiff">—</div><div class="n" id="cDiffN">—</div></div>
@@ -218,7 +220,7 @@
         </div>
         <div class="cmp-actions">
           <button type="button" class="btn" id="flyFriend" data-i18n="flyFriend"></button>
-          <button type="button" class="btn ghost" id="cmpShare" data-i18n="cmpShare"></button>
+          <button type="button" class="btn ghost" id="cmpShare"></button>
           <span class="share-note" id="cmpNote" aria-live="polite"></span>
         </div>
       </div>

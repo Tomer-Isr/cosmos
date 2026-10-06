@@ -102,27 +102,44 @@ if (params.get('n')) fname.value = params.get('n').slice(0, 24);
 let friend = validDate(fdate.value), friendStar = null;
 const pageOpen = Date.now();
 const planetAges = {}, friendAges = {};
+// a link with f= came from a friend: their date is the friend slot, the visitor's own date is theirs
+const invited = !!validDate(params.get('f'));
+let ownDate = startDate !== SAMPLE;
+const myname = $('myname');
+myname.value = ls.get('cosmos-name') || '';
+myname.addEventListener('input', () => ls.set('cosmos-name', myname.value.trim()));
+function renderInvite() {
+  const el = $('invite'); el.hidden = !invited; if (!invited) return;
+  const name = (fname.value.trim() || t('invFriend')).replace(/[<>&"]/g, '');
+  el.innerHTML = t(ownDate ? 'invHave' : 'invNeed', { name });
+}
 input.addEventListener('change', () => {
   const d = validDate(input.value); if (!d) return;
-  birth = d; ls.set('cosmos-birth', input.value); $('sample').hidden = true;
-  renderStatic(); renderCompare(); weeksAnim = 0; drawWeeks(1);
+  birth = d; ls.set('cosmos-birth', input.value); $('sample').hidden = true; ownDate = true;
+  renderStatic(); renderCompare(); renderInvite(); weeksAnim = 0; drawWeeks(1);
 });
 const onFriend = () => { friend = validDate(fdate.value); renderCompare(); };
 fdate.addEventListener('change', onFriend); fname.addEventListener('input', onFriend);
 $('form').addEventListener('submit', e => e.preventDefault());
 $('cmpForm').addEventListener('submit', e => e.preventDefault());
 
-function shareUrl(withFriend) {
-  let u = SITE + pathFor(lang) + '?d=' + input.value;
-  if (withFriend && friend) { u += '&f=' + fdate.value; if (fname.value.trim()) u += '&n=' + encodeURIComponent(fname.value.trim()); }
+const shareUrl = () => SITE + pathFor(lang) + '?d=' + input.value;
+// the friend opens it from their side: their date is the main one, mine goes to the friend slot
+function cmpUrl() {
+  let u = SITE + pathFor(lang) + '?' + (friend ? 'd=' + fdate.value + '&' : '') + 'f=' + input.value;
+  if (myname.value.trim()) u += '&n=' + encodeURIComponent(myname.value.trim());
   return u;
 }
 function copy(text, note) {
   const done = ok => { note.textContent = ok ? t('shared') : text; };
   try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch (e) { done(false); }
 }
-$('share').onclick = () => copy(shareUrl(false), $('shareNote'));
-$('cmpShare').onclick = () => copy(shareUrl(true), $('cmpNote'));
+$('share').onclick = () => copy(shareUrl(), $('shareNote'));
+$('cmpShare').onclick = async () => {
+  const url = cmpUrl();
+  if (mob && navigator.share) { try { await navigator.share({ text: t('cmpShareText'), url }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  copy(url, $('cmpNote'));
+};
 
 /* ================= odometer ================= */
 const odo = $('odo');
@@ -250,7 +267,8 @@ function renderCompare() {
   $('cStarK').textContent = t('kFStar', { name });
   const has = !!friend;
   $('cmpGrid').style.opacity = has ? 1 : .45;
-  $('flyFriend').hidden = $('cmpShare').hidden = !has;
+  $('flyFriend').hidden = !has;
+  $('cmpShare').textContent = t(has ? 'cmpShare' : 'cmpInvite');
   PLANETS.forEach(([id, period]) => { friendAges[id] = has ? (Date.now() - friend) / DAY / period : null; });
   if (!has) {
     ['cDiff', 'cDiffN', 'cPeers', 'cSum', 'cSumN', 'cMid', 'cStar', 'cStarN', 'cTog'].forEach(k => $(k).textContent = '—');
@@ -1001,6 +1019,7 @@ function applyLang(l, user) {
   const words = t('h1a').split(' ');
   h1.innerHTML = words.map((w, i) => `<span class="w" style="animation-delay:${(i * .08).toFixed(2)}s">${w}</span>`).join(' ') + ` <b class="w" style="animation-delay:${(words.length * .08 + .02).toFixed(2)}s">${t('h1b').replace(/ /g, '&nbsp;')}</b>`;
   fname.placeholder = t('cmpNamePh');
+  renderInvite();
   [...$('langs').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.l === l)));
   buildHud();
   odo.dataset.len = '';

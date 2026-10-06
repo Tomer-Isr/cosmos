@@ -199,3 +199,6 @@ main,header .wrap,.foot,.hud,.scale{transition:opacity .6s}
   .cmp-form label{flex:1 1 140px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.js .rv:not(.in){transform:none;opacity:1}}
+
+.invite{font-size:15px;line-height:1.5;margin:0 0 18px;max-width:560px}
+.invite a{color:var(--ice);text-underline-offset:3px}
