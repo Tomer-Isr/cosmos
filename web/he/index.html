@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>נוסעים בחלל</title>
+<meta name="description" content="מזינים תאריך לידה וטסים מכדור הארץ עד שביל החלב: בן כמה אתה על מאדים, הכוכב של שנת הלידה שלך והחיים בשבועות.">
+<meta name="theme-color" content="#05060f">
+<link rel="canonical" href="https://cosmos.tomerisr.org.il/he/">
+<link rel="alternate" hreflang="ru" href="https://cosmos.tomerisr.org.il/">
+<link rel="alternate" hreflang="en" href="https://cosmos.tomerisr.org.il/en/">
+<link rel="alternate" hreflang="he" href="https://cosmos.tomerisr.org.il/he/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cosmos.tomerisr.org.il/he/">
+<meta property="og:title" content="בן כמה אתה על מאדים?">
+<meta property="og:description" content="טסים מכדור הארץ עד שביל החלב עם תאריך הלידה שלך">
+<meta property="og:image" content="https://cosmos.tomerisr.org.il/og-he.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Rubik:wght@300;400;500;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div id="dim"></div>
+<div id="labels" aria-hidden="true"></div>
+<nav class="langs" id="langs" aria-label="Language"></nav>
+<nav class="hud" id="hud" aria-label="Scale"></nav>
+<div class="scale" id="scale" aria-live="off"></div>
+<div id="tip" hidden></div>
+<div id="fcard" role="dialog" aria-hidden="true">
+  <div class="eyebrow" id="fEye">—</div>
+  <div class="fname" id="fName">—</div>
+  <div class="facts" id="fFacts"></div>
+  <p id="fText"></p>
+  <button type="button" class="btn ghost" id="fBack" data-i18n="back"></button>
+</div>
+<div id="cardModal" hidden role="dialog" aria-modal="true">
+  <div class="box">
+    <img id="cardImg" alt="">
+    <div class="row">
+      <button type="button" class="btn" id="cardShare" data-i18n="cardShare"></button>
+      <a class="btn ghost" id="cardSave" download="cosmos.png" data-i18n="cardSave"></a>
+      <button type="button" class="btn ghost" id="cardClose" data-i18n="cardClose"></button>
+    </div>
+  </div>
+</div>
+
+<header class="hero" data-scene="0">
+  <div class="wrap">
+    <div class="eyebrow" data-i18n="eyebrowHero"></div>
+    <h1 id="h1"></h1>
+    <p class="lead" data-i18n="lead"></p>
+    <form class="birth" id="form" autocomplete="off">
+      <label for="birth"><span data-i18n="birthLabel"></span>
+        <input type="date" id="birth" min="1900-01-01" required>
+      </label>
+      <span class="tag" id="sample" data-i18n="sample"></span>
+      <div class="actions">
+        <button type="button" class="btn" id="cardBtn" data-i18n="cardBtn"></button>
+        <button type="button" class="btn ghost" id="share" data-i18n="shareLink"></button>
+        <span class="share-note" id="shareNote" aria-live="polite"></span>
+      </div>
+    </form>
+    <div class="odo-wrap">
+      <div class="odo" id="odo" aria-live="off"></div>
+      <div class="odo-cap" data-i18n="odoCap"></div>
+    </div>
+    <div class="scroll-hint"><i></i><span data-i18n="scrollHint"></span></div>
+  </div>
+</header>
+
+<main>
+  <section class="ch tall" id="space">
+    <div class="wrap">
+      <div class="panel rv" data-scene="1">
+        <div class="eyebrow" data-i18n="spaceEye"></div>
+        <h2 data-i18n="spaceH"></h2>
+        <p data-i18n="spaceP"></p>
+      </div>
+      <div style="height:38vh"></div>
+      <div class="panel rv" data-scene="2">
+        <div class="eyebrow" data-i18n="galEye"></div>
+        <h2 data-i18n="galH"></h2>
+        <p data-i18n="galP"></p>
+        <div class="grid">
+          <div class="cell"><div class="k" data-i18n="kLaps"></div><div class="v live" id="laps">—</div><div class="n" data-i18n="nLaps"></div></div>
+          <div class="cell"><div class="k" data-i18n="kGal"></div><div class="v live" id="galKm">—</div><div class="n" data-i18n="nGal"></div></div>
+          <div class="cell"><div class="k" data-i18n="kCmb"></div><div class="v live" id="cmbKm">—</div><div class="n" data-i18n="nCmb"></div></div>
+          <div class="cell"><div class="k" data-i18n="kSpins"></div><div class="v" id="spins">—</div><div class="n" data-i18n="nSpins"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="sky">
+    <div class="wrap">
+      <div class="panel wide rv" data-scene="3">
+        <div class="eyebrow" data-i18n="skyEye"></div>
+        <h2 data-i18n="skyH"></h2>
+        <p data-i18n="skyP"></p>
+        <div class="light">
+          <canvas id="lightC" aria-hidden="true"></canvas>
+          <div>
+            <div class="eyebrow" data-i18n="lightEye"></div>
+            <div class="star-name" id="starName">—</div>
+            <p id="starText">—</p>
+            <div class="meta" id="starMeta">—</div>
+            <div style="margin-top:16px"><button type="button" class="btn" id="flyStar" data-i18n="flyStar"></button></div>
+          </div>
+        </div>
+        <div class="subhead" data-i18n="peersH"></div>
+        <p style="margin:0 0 10px" data-i18n="peersP"></p>
+        <div class="chips" id="starChips"></div>
+        <div style="height:22px"></div>
+        <div class="grid">
+          <div class="cell"><div class="k" data-i18n="kMoons"></div><div class="v" id="moons">—</div><div class="n" data-i18n="nMoons"></div></div>
+          <div class="cell"><div class="k" data-i18n="kHalley"></div><div class="v" id="halley">—</div><div class="n" id="halleyNote">—</div></div>
+          <div class="cell"><div class="k" data-i18n="kWeekday"></div><div class="v" id="weekday">—</div><div class="n" id="daysLived">—</div></div>
+          <div class="cell"><div class="k" data-i18n="kNextBd"></div><div class="v live" id="nextBd">—</div><div class="n" id="nextBdNote">—</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch tall" id="planets">
+    <div class="wrap">
+      <div class="panel rv" data-scene="4">
+        <div class="eyebrow" data-i18n="plEye"></div>
+        <h2 data-i18n="plH"></h2>
+        <p data-i18n="plP"></p>
+        <div class="planets" id="plList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="body">
+    <div class="wrap">
+      <div class="panel rv" data-scene="5">
+        <div class="eyebrow" data-i18n="bodyEye"></div>
+        <h2 data-i18n="bodyH"></h2>
+        <p data-i18n="bodyP"></p>
+        <div class="strip"><canvas id="ecg" aria-hidden="true"></canvas><div class="tagline" data-i18n="pulse"></div></div>
+        <div class="grid">
+          <div class="cell" id="beatCell"><div class="k" data-i18n="kBeats"></div><div class="v live" id="beats">—</div><div class="n" data-i18n="nBeats"></div></div>
+          <div class="cell"><div class="k" data-i18n="kBreaths"></div><div class="v live" id="breaths">—</div><div class="n" data-i18n="nBreaths"></div></div>
+          <div class="cell"><div class="k" data-i18n="kBlinks"></div><div class="v live" id="blinks">—</div><div class="n" data-i18n="nBlinks"></div></div>
+          <div class="cell"><div class="k" data-i18n="kRbc"></div><div class="v live" id="rbc">—</div><div class="n" data-i18n="nRbc"></div></div>
+          <div class="cell"><div class="k" data-i18n="kSleep"></div><div class="v" id="sleep">—</div><div class="n" data-i18n="nSleep"></div></div>
+          <div class="cell"><div class="k" data-i18n="kHair"></div><div class="v" id="hair">—</div><div class="n" data-i18n="nHair"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="people">
+    <div class="wrap">
+      <div class="panel rv" data-scene="6">
+        <div class="eyebrow" data-i18n="peoEye"></div>
+        <h2 data-i18n="peoH"></h2>
+        <p data-i18n="peoP"></p>
+        <div class="strip"><canvas id="births" aria-hidden="true"></canvas><div class="tagline" data-i18n="birthsTag"></div></div>
+        <div class="grid">
+          <div class="cell"><div class="k" data-i18n="kPopBirth"></div><div class="v" id="popBirth">—</div><div class="n" data-i18n="nPopNow"></div></div>
+          <div class="cell"><div class="k" data-i18n="kBornAfter"></div><div class="v" id="bornAfter">—</div><div class="n" data-i18n="nBornShare"></div></div>
+          <div class="cell"><div class="k" data-i18n="kOlder"></div><div class="v" id="olderThan">—</div><div class="n" data-i18n="nOlder"></div></div>
+          <div class="cell"><div class="k" data-i18n="kSess"></div><div class="v live" id="sessBorn">—</div><div class="n" data-i18n="nSess"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="weeks-ch">
+    <div class="wrap">
+      <div class="panel wide rv" data-scene="7">
+        <div class="eyebrow" data-i18n="wEye"></div>
+        <h2 data-i18n="wH"></h2>
+        <p data-i18n="wP"></p>
+        <canvas id="weeks"></canvas>
+        <div class="legend">
+          <span><i style="background:var(--sun)"></i><span id="wLived">—</span></span>
+          <span><i style="background:var(--ice)"></i><span data-i18n="wNow"></span></span>
+          <span><i style="background:var(--line-solid)"></i><span id="wLeft">—</span> <span data-i18n="wTo90"></span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch tall" id="compare">
+    <div class="wrap">
+      <div class="panel rv" data-scene="8">
+        <div class="eyebrow" data-i18n="cmpEye"></div>
+        <h2 data-i18n="cmpH"></h2>
+        <p data-i18n="cmpP"></p>
+        <form class="cmp-form" id="cmpForm" autocomplete="off">
+          <label for="fname"><span data-i18n="cmpName"></span><input type="text" id="fname" maxlength="24"></label>
+          <label for="fdate"><span data-i18n="cmpDate"></span><input type="date" id="fdate" min="1900-01-01"></label>
+        </form>
+        <div class="grid" id="cmpGrid">
+          <div class="cell"><div class="k" data-i18n="kDiff"></div><div class="v" id="cDiff">—</div><div class="n" id="cDiffN">—</div></div>
+          <div class="cell"><div class="k" data-i18n="kPeers"></div><div class="v" id="cPeers">—</div><div class="n" data-i18n="nPeers"></div></div>
+          <div class="cell"><div class="k" id="cSumK">—</div><div class="v" id="cSum">—</div><div class="n" id="cSumN">—</div></div>
+          <div class="cell"><div class="k" data-i18n="kMid"></div><div class="v" id="cMid">—</div><div class="n" data-i18n="nMid"></div></div>
+          <div class="cell"><div class="k" id="cStarK">—</div><div class="v" id="cStar">—</div><div class="n" id="cStarN">—</div></div>
+          <div class="cell"><div class="k" data-i18n="kTog"></div><div class="v" id="cTog">—</div><div class="n" data-i18n="nTog"></div></div>
+        </div>
+        <div class="cmp-actions">
+          <button type="button" class="btn" id="flyFriend" data-i18n="flyFriend"></button>
+          <button type="button" class="btn ghost" id="cmpShare" data-i18n="cmpShare"></button>
+          <span class="share-note" id="cmpNote" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="panel wide">
+      <p data-i18n="foot1"></p>
+      <p data-i18n="foot2"></p>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/i18n.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
