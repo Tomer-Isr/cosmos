@@ -88,31 +88,18 @@ ru: {
   kHoleAge: 'Вернёшься через час, а тебе уже', nHoleAge: 'сейчас тебе {n}',
   kHoleBd: 'Пропущено дней рождения', nHoleBd: 'пока для тебя прошёл один час',
   holeMiller: 'Как на планете Миллер из «Интерстеллара»: час — семь лет.',
-  gameBtn: 'Полетели за зондом', gameBtnNote: 'мини-игра · на телефоне две кнопки',
-  gIntroH: 'Миссия: данные с горизонта',
-  gIntroP: 'У самой дыры висит зонд с данными. Там час — семь лет на Земле.',
-  gIntro1: 'Корабль кружит по орбите. Пунктир показывает, куда ты нырнёшь.',
-  gIntro2: 'Пунктир стал зелёным — жми «Нырнуть».',
-  gIntro3: 'У зонда качаются данные, а на Земле летят годы. Жми «Домой», когда хватит.',
-  gDive: 'Нырнуть',
-  gHome: 'Домой',
-  gData: 'Данные',
-  gTries: 'нырков: {n}',
-  gFailH: 'Зонд не пойман',
-  gFailP: 'Три нырка мимо. Жми «Нырнуть», только когда пунктир зелёный.',
-  cardHoleData: 'данных с горизонта',
-  gStart: 'Старт', gBrake: '◀ Тормоз', gGas: 'Газ ▶', gFuel: 'Топливо',
-  gShip: 'У тебя', gEarth: 'На Земле', gAge: 'Тебе',
-  gHere: 'здесь час = {s}',
-  gH1: 'Жди, пока пунктир станет зелёным', gH2: 'Зелёный! Жми «Нырнуть»', gH3: 'Ныряешь к зонду…', gH4: 'Качаем данные. На Земле летят годы — жми «Домой», когда хватит',
-  gH5: 'Летишь домой…', gH6: 'Мимо зонда. Жди зелёный и ныряй ещё раз', gH7: 'Мимо зонда. Подержи «Тормоз» или «Газ», пока пунктир не станет зелёным', gLblYou: 'ты', gLblProbe: 'зонд', gLblBase: 'база',
-  gWinH: 'Ты вернулся', gWinP: 'Данные: {data}. У тебя прошло {ship}, а на Земле — {earth}. Тебе теперь {age}, пропущено дней рождения: {bd}.',
-  gLostH: 'Горизонт не отпускает', gLostP: 'За горизонтом событий не возвращаются. Для Земли ты застыл у края дыры навсегда.',
-  gAwayH: 'Улетел в пустоту', gAwayP: 'Корабль ушёл слишком далеко, топлива на возврат нет.',
-  gAgain: 'Ещё раз', gCard: 'Карточка',
-  cardHole: 'Миссия к чёрной дыре', cardHoleEarth: 'На Земле прошло', cardHoleShip: 'у меня прошло', cardHoleAge: 'мне теперь', cardHoleBd: 'пропущено дней рождения',
-  cardHoleCta: 'А ты сколько потеряешь?', gShareText: 'Я слетал к чёрной дыре, а на Земле прошло {earth}. Попробуй сам:',
-  hm: '{h} ч {m} мин',
+
+
+
+
+
+
+
+
+
+
+
+
   holeNote: 'Расчёт для того, кто неподвижно висит у невращающейся дыры. Картинка — настоящая трассировка лучей света, расстояния в ней сжаты.',
   bigT: 'трлн', bigB: 'млрд', bigM: 'млн', m: 'м', cm: 'см',
   scenes: [['Орбита Земли', 'до Солнца 150 млн км'], ['Солнечная система', 'до Нептуна 4,5 млрд км · масштаб сжат'], ['Млечный Путь', '≈100 000 световых лет поперёк'], ['Диск Галактики', 'взгляд к центру Галактики'], ['Световая сфера', 'радиус = твой возраст в световых годах'], ['Планеты сегодня', 'положения на сегодня · время ×1 млн'], ['Земля', 'диаметр 12 742 км'], ['Ночная сторона', '8,2 млрд человек · огни городов'], ['Время', 'одна точка — одна неделя'], ['Вдвоём', 'одна Солнечная система на двоих'], ['Чёрная дыра', '100 млн масс Солнца · свет огибает горизонт']],
@@ -137,7 +124,6 @@ ru: {
     merak: ['Мерак', 'ковш Большой Медведицы'], alcor: ['Алькор', 'Большая Медведица, звезда «проверки зрения»'], denebKaitos: ['Денеб Кайтос', 'созвездие Кит'],
   },
 },
-
 en: {
   _locale: 'en-US', _dir: 'ltr', _name: 'EN',
   title: 'You Are a Passenger',
@@ -225,31 +211,18 @@ en: {
   kHoleAge: 'Back after an hour, you are', nHoleAge: 'you are {n} now',
   kHoleBd: 'Birthdays missed', nHoleBd: 'while one hour passed for you',
   holeMiller: 'Like Miller’s planet in “Interstellar”: one hour is seven years.',
-  gameBtn: 'Fly for the probe', gameBtnNote: 'mini game · two buttons on a phone',
-  gIntroH: 'Mission: data from the horizon',
-  gIntroP: 'A probe full of data hovers right next to the hole. One hour there is seven years on Earth.',
-  gIntro1: 'Your ship circles in orbit. The dotted line shows where you would dive.',
-  gIntro2: 'When the line turns green, press “Dive”.',
-  gIntro3: 'At the probe the data downloads while years fly by on Earth. Press “Home” when you have enough.',
-  gDive: 'Dive',
-  gHome: 'Home',
-  gData: 'Data',
-  gTries: 'dives left: {n}',
-  gFailH: 'Probe not reached',
-  gFailP: 'Three dives missed. Press “Dive” only when the line is green.',
-  cardHoleData: 'of data from the horizon',
-  gStart: 'Start', gBrake: '◀ Brake', gGas: 'Thrust ▶', gFuel: 'Fuel',
-  gShip: 'Your time', gEarth: 'On Earth', gAge: 'Your age',
-  gHere: 'here one hour = {s}',
-  gH1: 'Wait for the line to turn green', gH2: 'Green! Press “Dive”', gH3: 'Diving to the probe…', gH4: 'Downloading data. Years fly by on Earth — press “Home” when you have enough',
-  gH5: 'Flying home…', gH6: 'Missed the probe. Wait for green and dive again', gH7: 'Missed the probe. Hold “Brake” or “Thrust” until the line turns green', gLblYou: 'you', gLblProbe: 'probe', gLblBase: 'base',
-  gWinH: 'You are back', gWinP: 'Data: {data}. {ship} passed for you and {earth} on Earth. You are now {age}, birthdays missed: {bd}.',
-  gLostH: 'The horizon won’t let go', gLostP: 'Nothing comes back from beyond the event horizon. To Earth you are frozen at the edge forever.',
-  gAwayH: 'Lost in the void', gAwayP: 'The ship drifted too far and has no fuel to come back.',
-  gAgain: 'Again', gCard: 'Card',
-  cardHole: 'Mission to a black hole', cardHoleEarth: 'On Earth it has been', cardHoleShip: 'for me', cardHoleAge: 'I am now', cardHoleBd: 'birthdays missed',
-  cardHoleCta: 'How much would you lose?', gShareText: 'I flew to a black hole and {earth} passed on Earth. Try it:',
-  hm: '{h} h {m} min',
+
+
+
+
+
+
+
+
+
+
+
+
   holeNote: 'Calculated for someone hovering still next to a non-rotating hole. The picture is real light ray tracing; distances are compressed.',
   bigT: 'trillion', bigB: 'billion', bigM: 'million', m: 'm', cm: 'cm',
   scenes: [['Earth’s orbit', '150 million km to the Sun'], ['Solar System', '4.5 billion km to Neptune · scale compressed'], ['Milky Way', '≈100,000 light years across'], ['Galactic disc', 'looking toward the galactic centre'], ['Light sphere', 'radius = your age in light years'], ['Planets today', 'today’s positions · time ×1 million'], ['Earth', '12,742 km across'], ['Night side', '8.2 billion people · city lights'], ['Time', 'one dot is one week'], ['Two of you', 'one Solar System for two'], ['Black hole', '100 million Suns · light bends around the horizon']],
@@ -274,7 +247,6 @@ en: {
     merak: ['Merak', 'the Big Dipper'], alcor: ['Alcor', 'Ursa Major, the old “eyesight test” star'], denebKaitos: ['Deneb Kaitos', 'constellation Cetus'],
   },
 },
-
 he: {
   _locale: 'he-IL', _dir: 'rtl', _name: 'עב',
   title: 'נוסעים בחלל',
@@ -362,31 +334,18 @@ he: {
   kHoleAge: 'חוזרים אחרי שעה, והגיל שלך', nHoleAge: 'עכשיו הגיל שלך {n}',
   kHoleBd: 'ימי הולדת שפספסת', nHoleBd: 'בזמן שעבורך עברה שעה אחת',
   holeMiller: 'כמו בכוכב של מילר ב„בין כוכבים“: שעה אחת היא שבע שנים.',
-  gameBtn: 'טסים להביא את הגשושית', gameBtnNote: 'משחקון · בטלפון שני כפתורים',
-  gIntroH: 'משימה: נתונים מהאופק',
-  gIntroP: 'ממש ליד החור מרחפת גשושית עם נתונים. שם שעה היא שבע שנים על כדור הארץ.',
-  gIntro1: 'החללית מקיפה במסלול. הקו המקווקו מראה לאן תצלול.',
-  gIntro2: 'הקו נהיה ירוק — לוחצים „צלילה“.',
-  gIntro3: 'ליד הגשושית הנתונים יורדים, ועל כדור הארץ עפות שנים. לוחצים „הביתה“ כשמספיק.',
-  gDive: 'צלילה',
-  gHome: 'הביתה',
-  gData: 'נתונים',
-  gTries: 'צלילות: {n}',
-  gFailH: 'הגשושית לא נתפסה',
-  gFailP: 'שלוש צלילות החטיאו. לוחצים „צלילה“ רק כשהקו ירוק.',
-  cardHoleData: 'נתונים מהאופק',
-  gStart: 'יוצאים', gBrake: 'בלימה ▶', gGas: '◀ גז', gFuel: 'דלק',
-  gShip: 'אצלך', gEarth: 'על כדור הארץ', gAge: 'הגיל שלך',
-  gHere: 'כאן שעה = {s}',
-  gH1: 'מחכים שהקו יהיה ירוק', gH2: 'ירוק! לוחצים „צלילה“', gH3: 'צוללים לגשושית…', gH4: 'מורידים נתונים. על כדור הארץ עפות שנים — לוחצים „הביתה“ כשמספיק',
-  gH5: 'טסים הביתה…', gH6: 'פספסת את הגשושית. מחכים לירוק וצוללים שוב', gH7: 'פספסת את הגשושית. מחזיקים „בלימה“ או „גז“ עד שהקו נהיה ירוק', gLblYou: 'את/ה', gLblProbe: 'גשושית', gLblBase: 'בסיס',
-  gWinH: 'חזרת', gWinP: 'נתונים: {data}. אצלך עברו {ship}, ועל כדור הארץ — {earth}. הגיל שלך עכשיו {age}, ימי הולדת שפספסת: {bd}.',
-  gLostH: 'האופק לא משחרר', gLostP: 'מעבר לאופק האירועים לא חוזרים. מבחינת כדור הארץ קפאת על הקצה לנצח.',
-  gAwayH: 'אבדת בחלל', gAwayP: 'החללית התרחקה יותר מדי ואין דלק לחזור.',
-  gAgain: 'עוד פעם', gCard: 'כרטיס',
-  cardHole: 'משימה לחור שחור', cardHoleEarth: 'על כדור הארץ עברו', cardHoleShip: 'אצלי עברו', cardHoleAge: 'הגיל שלי עכשיו', cardHoleBd: 'ימי הולדת שפספסתי',
-  cardHoleCta: 'וכמה אתה תפסיד?', gShareText: 'טסתי לחור שחור ועל כדור הארץ עברו {earth}. נסו בעצמכם:',
-  hm: '{h} שע׳ {m} דק׳',
+
+
+
+
+
+
+
+
+
+
+
+
   holeNote: 'החישוב הוא למי שמרחף במקום ליד חור שחור שאינו מסתובב. התמונה היא מעקב אמיתי אחרי קרני אור, והמרחקים בה דחוסים.',
   bigT: 'טריליון', bigB: 'מיליארד', bigM: 'מיליון', m: 'מ׳', cm: 'ס״מ',
   scenes: [['מסלול כדור הארץ', '150 מיליון ק״מ עד השמש'], ['מערכת השמש', '4.5 מיליארד ק״מ עד נפטון · קנה מידה דחוס'], ['שביל החלב', '≈100,000 שנות אור לרוחב'], ['דיסקת הגלקסיה', 'מבט אל מרכז הגלקסיה'], ['כדור האור', 'רדיוס = הגיל שלך בשנות אור'], ['כוכבי הלכת היום', 'המיקומים של היום · הזמן פי מיליון'], ['כדור הארץ', 'קוטר 12,742 ק״מ'], ['צד הלילה', '8.2 מיליארד אנשים · אורות הערים'], ['זמן', 'כל נקודה היא שבוע'], ['ביחד', 'מערכת שמש אחת לשניים'], ['חור שחור', '100 מיליון מסות שמש · האור מתעקם סביב האופק']],

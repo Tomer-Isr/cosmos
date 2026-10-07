@@ -242,38 +242,10 @@
         </div>
         <p class="hole-miller" id="holeMiller" data-i18n="holeMiller" hidden></p>
         <p class="hole-note" data-i18n="holeNote"></p>
-        <div class="hole-play"><button type="button" class="btn" id="gameBtn" data-i18n="gameBtn"></button><span data-i18n="gameBtnNote"></span></div>
       </div>
     </div>
   </section>
 </main>
-
-<div class="game" id="game" hidden>
-  <canvas id="gameC" aria-label=""></canvas>
-  <div class="g-top">
-    <div class="g-stat"><span data-i18n="gShip"></span><b id="gShip">—</b></div>
-    <div class="g-stat"><span data-i18n="gEarth"></span><b id="gEarth">—</b></div>
-    <div class="g-stat"><span data-i18n="gAge"></span><b id="gAge">—</b></div>
-    <button type="button" class="g-x" id="gClose" aria-label="×">×</button>
-  </div>
-  <p class="g-hint" id="gHint"></p>
-  <div class="g-data"><span data-i18n="gData"></span><i><em id="gData"></em></i><b id="gDataN">0%</b><span id="gTries"></span></div>
-  <div class="g-ctl"><button type="button" class="btn" id="gAct"></button></div>
-  <div class="g-card" id="gIntro">
-    <h2 data-i18n="gIntroH"></h2>
-    <p data-i18n="gIntroP"></p>
-    <ul><li data-i18n="gIntro1"></li><li data-i18n="gIntro2"></li><li data-i18n="gIntro3"></li></ul>
-    <button type="button" class="btn" id="gStart" data-i18n="gStart"></button>
-  </div>
-  <div class="g-card" id="gEnd" hidden>
-    <h2 id="gEndH"></h2>
-    <p id="gEndP"></p>
-    <div class="g-end-acts">
-      <button type="button" class="btn" id="gAgain" data-i18n="gAgain"></button>
-      <button type="button" class="btn ghost" id="gCard" data-i18n="gCard"></button>
-    </div>
-  </div>
-</div>
 
 <footer class="foot">
   <div class="wrap">
@@ -286,7 +258,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="/i18n.js"></script>
-<script src="/game-core.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>
