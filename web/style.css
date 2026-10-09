@@ -205,6 +205,7 @@ main,header .wrap,.foot,.hud,.scale{transition:opacity .6s}
 .slide{display:grid;gap:8px;font-size:13px;color:var(--dim);margin:6px 0 20px}
 .slide input{width:100%;accent-color:var(--ice);height:28px;direction:inherit}
 .hole-miller{margin:16px 0 0;color:var(--ice)}
+.hole-go{margin-top:18px}
 .hole-note{margin:14px 0 0;font-size:12.5px;color:var(--dim)}
 section#hole{padding-top:8vh}
 .hole-view{height:85vh}

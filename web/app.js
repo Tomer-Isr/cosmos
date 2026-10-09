@@ -1103,7 +1103,7 @@ function initScene() {
 }
 
 /* ================= language switch ================= */
-const h1 = $('h1');
+const h1 = $('h1'), TRAVELER = 'https://traveler.tomerisr.org.il/';
 function applyLang(l, user) {
   lang = l; D = I18N[l];
   root.lang = l; root.dir = D._dir;
@@ -1113,6 +1113,7 @@ function applyLang(l, user) {
   const words = t('h1a').split(' ');
   h1.innerHTML = words.map((w, i) => `<span class="w" style="animation-delay:${(i * .08).toFixed(2)}s">${w}</span>`).join(' ') + ` <b class="w" style="animation-delay:${(words.length * .08 + .02).toFixed(2)}s">${t('h1b').replace(/ /g, '&nbsp;')}</b>`;
   fname.placeholder = t('cmpNamePh');
+  $('toShuttle').href = TRAVELER + '?lang=' + l; $('toHole').href = TRAVELER + '?go=hole&lang=' + l;
   renderInvite();
   [...$('langs').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.l === l)));
   buildHud();

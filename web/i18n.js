@@ -100,6 +100,7 @@ ru: {
 
 
 
+  toShuttle: 'Полетать на шаттле', toHole: 'Слетать к дыре на шаттле',
   holeNote: 'Расчёт для того, кто неподвижно висит у невращающейся дыры. Картинка — настоящая трассировка лучей света, расстояния в ней сжаты.',
   bigT: 'трлн', bigB: 'млрд', bigM: 'млн', m: 'м', cm: 'см',
   scenes: [['Орбита Земли', 'до Солнца 150 млн км'], ['Солнечная система', 'до Нептуна 4,5 млрд км · масштаб сжат'], ['Млечный Путь', '≈100 000 световых лет поперёк'], ['Диск Галактики', 'взгляд к центру Галактики'], ['Световая сфера', 'радиус = твой возраст в световых годах'], ['Планеты сегодня', 'положения на сегодня · время ×1 млн'], ['Земля', 'диаметр 12 742 км'], ['Ночная сторона', '8,2 млрд человек · огни городов'], ['Время', 'одна точка — одна неделя'], ['Вдвоём', 'одна Солнечная система на двоих'], ['Чёрная дыра', '100 млн масс Солнца · свет огибает горизонт']],
@@ -223,6 +224,7 @@ en: {
 
 
 
+  toShuttle: 'Fly a shuttle', toHole: 'Fly to the hole by shuttle',
   holeNote: 'Calculated for someone hovering still next to a non-rotating hole. The picture is real light ray tracing; distances are compressed.',
   bigT: 'trillion', bigB: 'billion', bigM: 'million', m: 'm', cm: 'cm',
   scenes: [['Earth’s orbit', '150 million km to the Sun'], ['Solar System', '4.5 billion km to Neptune · scale compressed'], ['Milky Way', '≈100,000 light years across'], ['Galactic disc', 'looking toward the galactic centre'], ['Light sphere', 'radius = your age in light years'], ['Planets today', 'today’s positions · time ×1 million'], ['Earth', '12,742 km across'], ['Night side', '8.2 billion people · city lights'], ['Time', 'one dot is one week'], ['Two of you', 'one Solar System for two'], ['Black hole', '100 million Suns · light bends around the horizon']],
@@ -346,6 +348,7 @@ he: {
 
 
 
+  toShuttle: 'לטוס במעבורת', toHole: 'לטוס לחור השחור במעבורת',
   holeNote: 'החישוב הוא למי שמרחף במקום ליד חור שחור שאינו מסתובב. התמונה היא מעקב אמיתי אחרי קרני אור, והמרחקים בה דחוסים.',
   bigT: 'טריליון', bigB: 'מיליארד', bigM: 'מיליון', m: 'מ׳', cm: 'ס״מ',
   scenes: [['מסלול כדור הארץ', '150 מיליון ק״מ עד השמש'], ['מערכת השמש', '4.5 מיליארד ק״מ עד נפטון · קנה מידה דחוס'], ['שביל החלב', '≈100,000 שנות אור לרוחב'], ['דיסקת הגלקסיה', 'מבט אל מרכז הגלקסיה'], ['כדור האור', 'רדיוס = הגיל שלך בשנות אור'], ['כוכבי הלכת היום', 'המיקומים של היום · הזמן פי מיליון'], ['כדור הארץ', 'קוטר 12,742 ק״מ'], ['צד הלילה', '8.2 מיליארד אנשים · אורות הערים'], ['זמן', 'כל נקודה היא שבוע'], ['ביחד', 'מערכת שמש אחת לשניים'], ['חור שחור', '100 מיליון מסות שמש · האור מתעקם סביב האופק']],
