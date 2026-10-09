@@ -170,7 +170,7 @@ function renderStatic() {
   $('spins').textContent = fmt(Math.floor(days * 1.0027379));
   $('spinKm') && ($('spinKm').textContent = big(days * 40075) + ' ' + t('km'));
 
-  const st = nearestStar(years); curStar = st;
+  const st = nearestStar(years); curStar = st; if ($('toStar')) shuttleLinks();
   if (st[0] === 'sun') {
     $('starName').textContent = t('sunName'); $('starText').textContent = t('sunText'); $('starMeta').textContent = t('sunMeta');
   } else {
@@ -1103,7 +1103,13 @@ function initScene() {
 }
 
 /* ================= language switch ================= */
-const h1 = $('h1'), TRAVELER = 'https://traveler.tomerisr.org.il/';
+const h1 = $('h1');
+// the shuttle starts at the star of your light; only the star's name travels, not the date
+function shuttleLinks() {
+  const TRAVELER = 'https://traveler.tomerisr.org.il/', s = curStar && curStar[0] !== 'sun' ? '&star=' + curStar[0] : '';
+  $('toShuttle').href = TRAVELER + '?lang=' + lang + s; $('toHole').href = TRAVELER + '?go=hole&lang=' + lang + s;
+  $('toStar').href = TRAVELER + '?lang=' + lang + s; $('toStar').hidden = !s;
+}
 function applyLang(l, user) {
   lang = l; D = I18N[l];
   root.lang = l; root.dir = D._dir;
@@ -1113,7 +1119,7 @@ function applyLang(l, user) {
   const words = t('h1a').split(' ');
   h1.innerHTML = words.map((w, i) => `<span class="w" style="animation-delay:${(i * .08).toFixed(2)}s">${w}</span>`).join(' ') + ` <b class="w" style="animation-delay:${(words.length * .08 + .02).toFixed(2)}s">${t('h1b').replace(/ /g, '&nbsp;')}</b>`;
   fname.placeholder = t('cmpNamePh');
-  $('toShuttle').href = TRAVELER + '?lang=' + l; $('toHole').href = TRAVELER + '?go=hole&lang=' + l;
+  shuttleLinks();
   renderInvite();
   [...$('langs').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.l === l)));
   buildHud();
