@@ -1104,11 +1104,11 @@ function initScene() {
 
 /* ================= language switch ================= */
 const h1 = $('h1');
-// the shuttle starts at the star of your light; only the star's name travels, not the date
+// the shuttle starts at the star of your light; the date goes along for «My sky» (the shuttle keeps it in the browser and drops it from the address)
 function shuttleLinks() {
-  const TRAVELER = 'https://traveler.tomerisr.org.il/', s = curStar && curStar[0] !== 'sun' ? '&star=' + curStar[0] : '';
+  const TRAVELER = 'https://traveler.tomerisr.org.il/', s = (curStar && curStar[0] !== 'sun' ? '&star=' + curStar[0] : '') + (input.value ? '&d=' + input.value : '');
   $('toShuttle').href = TRAVELER + '?lang=' + lang + s; $('toHole').href = TRAVELER + '?go=hole&lang=' + lang + s;
-  $('toStar').href = TRAVELER + '?lang=' + lang + s; $('toStar').hidden = !s;
+  $('toStar').href = TRAVELER + '?lang=' + lang + s; $('toStar').hidden = !curStar || curStar[0] === 'sun';
 }
 function applyLang(l, user) {
   lang = l; D = I18N[l];
