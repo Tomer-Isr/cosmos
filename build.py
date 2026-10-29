@@ -46,6 +46,7 @@ def build_pages():
         html = html.replace(f'content="{ru["ogTitle"]}"', f'content="{d["ogTitle"]}"')
         html = html.replace(f'content="{ru["ogSub"]}"', f'content="{d["ogSub"]}"')
         html = html.replace('/og-ru.jpg', f'/og-{lang}.jpg')
+        html = html.replace('iukhvidov.tomerisr.org.il/ru?utm_source=cosmos', f'iukhvidov.tomerisr.org.il/{lang}?utm_source=cosmos')
         for needle in (f'<title>{d["title"]}</title>', f'content="{d["ogTitle"]}"', f'/og-{lang}.jpg', f'lang="{lang}"'):
             assert needle in html, f'{lang}: replacement failed for {needle}'
         (WEB / lang).mkdir(exist_ok=True)
