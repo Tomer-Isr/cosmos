@@ -62,3 +62,6 @@
 
 ## 2026-10-29 — подпись
 - 29.10 подпись Made by Tomer → сайт (подвал, ссылка по языку страницы; build.py подставляет en/he)
+
+## 29.10.2026 (позже)
+- Подпись Made by Tomer заменена веб-компонентом `<made-by-tomer source="cosmos">` (madeby.js с iukhvidov.tomerisr.org.il) в подвале всех трёх языков; старые стили .madeby убраны.

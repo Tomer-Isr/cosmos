@@ -184,8 +184,7 @@ main,header .wrap,.foot,.hud,.scale{transition:opacity .6s}
 
 .foot{padding-block:20vh 90px;color:var(--dim);font-size:13px}
 .foot .panel p{max-width:70ch;margin:0 0 8px}
-.foot .madeby{margin:18px 0 0;text-align:center;font-size:13px;color:var(--dim);opacity:.85}
-.foot .madeby a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.foot made-by-tomer{display:block;margin:18px 0 0;text-align:center}
 
 @media (max-width:1000px){.hud{display:none}}
 @media (max-width:720px){
